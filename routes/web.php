@@ -11,4 +11,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('profile', 'profile')->name('profile.show');
 });
 
+Route::get('/get-gemini-key', function () {
+    return response()->json([
+        'key' => env('GEMINI_API_KEY')
+    ]);
+});
+
 require __DIR__.'/settings.php';

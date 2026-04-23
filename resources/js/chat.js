@@ -1,4 +1,5 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await getApiKey();
   // Get DOM elements
   const chatMessages = document.getElementById("chatMessages");
   const chatForm = document.querySelector(".chat-inputbar");
@@ -18,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================================================
   // GEMINI API CONFIGURATION
   // ============================================================
-  const GEMINI_API_KEY = "AIzaSyDAy2Pt1rOj5t6GjTTiP4-pexE6PMaRFfo";
+  let GEMINI_API_KEY = null;
   const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent";
 
   const SYSTEM_PROMPT = `You are Airé, a compassionate mental wellness AI companion. 
@@ -251,6 +252,18 @@ REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encou
   // GEMINI API CALL - SIMPLIFIED
   // ============================================================
   let isWaitingForResponse = false;
+
+  async function getApiKey() {
+    try {
+      const response = await fetch('/get-gemini-key');
+      const data = await response.json();
+      GEMINI_API_KEY = data.key;
+
+      console.log("API KEY LOADED:", GEMINI_API_KEY);
+    } catch (error) {
+      console.error("Failed to get API key:", error);
+    }
+  }
 
   async function getAIResponse(userMessage) {
     if (isWaitingForResponse) {
