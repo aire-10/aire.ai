@@ -100,7 +100,6 @@
 
 @section('scripts')
 
-<script src="{{ asset('js/navbar.js') }}"></script>
 <script src="{{ asset('js/aire-data.js') }}"></script>
 <script src="{{ asset('js/booster.js') }}"></script>
 

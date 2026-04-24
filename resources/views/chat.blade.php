@@ -4,8 +4,7 @@
 @section('body-class', 'chat-page')
 
 @push('head-scripts')
-  <script>if (!localStorage.getItem("authToken")) window.location.href = "{{ url('/login') }}";</script>
-  <script src="{{ asset('chat.js') }}" defer></script>
+  <script src="{{ asset('js/chat.js') }}" defer></script>
 @endpush
 
 @section('content')
@@ -14,7 +13,12 @@
       <aside class="chat-left">
         <div class="chat-card">
           <h3>AI Bot: Airé</h3>
-          <p class="chat-disclaimer"><b>Disclaimer:</b> Airé is not a licensed professional...</p>
+          <p class="chat-disclaimer">
+            <b>Disclaimer:</b> Airé is not a licensed mental health professional. 
+            This chatbot provides emotional support and should not replace professional medical advice.
+            <br><br>
+            If you are in crisis, please contact a qualified healthcare professional or emergency services immediately.
+          </p>
         </div>
         <div class="chat-card">
           <h3>History Chats</h3>
@@ -51,9 +55,15 @@
             </button>
           @endforeach
           <hr class="suggest-divider">
-          <div class="hotline-section">
-            <h4>Need immediate help?</h4>
-            <div class="hotline-item"><span>☎️ Talian Harapan</span> <a href="tel:145">145</a></div>
+          <div class="hotline-item">
+            <span>☎️ Talian Harapan</span> 
+            <a href="tel:145">145</a>
+          </div>
+
+          <div class="hotline-item">
+            <span>🚑 Emergency</span> 
+            <a href="tel:991">991</a>
+          </div>
           </div>
         </div>
       </aside>

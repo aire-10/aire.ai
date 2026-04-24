@@ -59,8 +59,8 @@
 @endsection
 
 @push('scripts')
-  <script src="{{ asset('booster.js') }}"></script>
-  <script src="{{ asset('progress.js') }}"></script>
+  <script src="{{ asset('js/booster.js') }}"></script>
+  <script src="{{ asset('js/progress.js') }}"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       initProgress({ selector: ".mr-item", storageKey: "mindreset-progress", activeClass: "done" });

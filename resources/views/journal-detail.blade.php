@@ -17,7 +17,9 @@
           <span class="about-pill">Journal Entry</span>
           <h2 class="book-left-title">Moments & Thoughts ✨</h2>
           <p class="book-left-tagline"><em>Captured on:</em></p>
-          <div id="detailDate" style="font-size: 1.1rem; color: #4c7a60; font-weight: 800; margin-bottom: 20px;"></div>
+          <div style="font-size: 1.1rem; color: #4c7a60; font-weight: 800; margin-bottom: 20px;">
+            {{ $journal->created_at->format('d F Y H:i') }}
+          </div>
           <p class="book-left-desc">
             This is a permanent record of how you felt and what you were thinking. 
             Reflecting on past entries helps you see how much you've grown.
@@ -38,7 +40,19 @@
         <div class="book-ruled-lines"></div>
         <div class="book-right-content">
           <div class="book-right-title">📖 The Entry</div>
-          <div id="detailText" class="entry-full-text"></div>
+
+          <div class="entry-full-text">
+            {{ $journal->content }}
+          </div>
+
+          @if($journal->image)
+            <img src="{{ asset('storage/' . $journal->image) }}" 
+                style="margin-top:20px; max-width:100%; border-radius:10px;">
+          @else
+            <p style="opacity:0.6; margin-top:10px;">No image attached</p>
+          @endif
+          </div>
+
           <img src="{{ asset('Land.png') }}" class="corner-butterfly-img" onerror="this.style.display='none'" />
         </div>
       </div>
@@ -49,17 +63,9 @@
 @push('scripts')
 <script>
   document.addEventListener("DOMContentLoaded", function() {
-    const entry = JSON.parse(localStorage.getItem("selectedEntry"));
     const rightPage = document.getElementById("rightPage");
     const historyTab = document.getElementById("historyTabLink");
     const journalTab = document.getElementById("journalTabLink");
-
-    if (entry) {
-      document.getElementById("detailDate").innerText = entry.date;
-      document.getElementById("detailText").innerText = entry.text;
-    } else {
-      document.getElementById("detailText").innerHTML = "<i>No entry selected.</i>";
-    }
 
     function flipAndNavigate(url) {
       rightPage.style.transform = "rotateY(-5deg) scale(1.01)";
