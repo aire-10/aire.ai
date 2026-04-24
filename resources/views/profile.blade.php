@@ -20,12 +20,18 @@
 
                 <div class="account-section">
                     <div class="section-label">Current Details</div>
+
                     <div class="readonly-row">
                         <span class="ro-label">Name</span>
-                        <span class="ro-value" id="roName">{{ Auth::user()->name ?? '—' }}</span>
-                    </div>
+                        <span class="ro-value">{{ $user->name }}</span>
                     </div>
 
+                    <div class="readonly-row">
+                        <span class="ro-label">Email</span>
+                        <span class="ro-value">{{ $user->email }}</span>
+                    </div>
+                </div>
+                
                 <form id="updateProfileForm" class="account-section" method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
                     @csrf
                     <div class="section-label">Update Details</div>

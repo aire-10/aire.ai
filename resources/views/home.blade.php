@@ -91,7 +91,6 @@
 
 <!-- KEEP YOUR ORIGINAL SCRIPTS -->
 @section('scripts')
-<script src="{{ asset('js/navbar.js') }}"></script>
 <script src="{{ asset('js/aire-data.js') }}"></script>
 <script src="{{ asset('js/home.js') }}"></script>
 @endsection
