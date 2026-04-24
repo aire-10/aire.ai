@@ -1,0 +1,365 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Grounding;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class GroundingController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    
+    /**
+     * Display the grounding exercise page
+     */
+    public function index()
+    {
+        return view('grounding');
+    }
+    
+    /**
+     * Save grounding exercise progress
+     */
+    public function saveProgress(Request $request)
+    {
+        $request->validate([
+            'step_index' => 'required|integer|min:0|max:4',
+            'inputs' => 'required|array',
+            'completed_steps' => 'required|array',
+            'is_completed' => 'boolean'
+        ]);
+        
+        $userId = Auth::id();
+        $today = now()->toDateString();
+        
+        // Get or create today's grounding session
+        $grounding = Grounding::firstOrNew([
+            'user_id' => $userId,
+            'date' => $today
+        ]);
+        
+        // Store progress as JSON
+        $progress = [
+            'completed_steps' => $request->completed_steps,
+            'step_inputs' => $this->formatStepInputs($request->inputs),
+            'last_updated' => now()->toDateTimeString()
+        ];
+        
+        $grounding->progress = json_encode($progress);
+        $grounding->completed_steps = count($request->completed_steps);
+        $grounding->total_steps = 5;
+        $grounding->is_completed = $request->is_completed ?? false;
+        
+        if ($request->is_completed) {
+            $grounding->completed_at = now();
+        }
+        
+        $grounding->save();
+        
+        // If completed, award XP
+        if ($request->is_completed && !$grounding->wasRecentlyCreated) {
+            $wasCompleted = Grounding::where('user_id', $userId)
+                ->where('date', $today)
+                ->where('is_completed', true)
+                ->exists();
+            
+            if (!$wasCompleted) {
+                // Award XP for completing grounding
+                $this->awardXP($userId, 0.5);
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Progress saved',
+            'completed' => $request->is_completed,
+            'xp_awarded' => $request->is_completed ? 0.5 : 0
+        ]);
+    }
+    
+    /**
+     * Get today's grounding progress
+     */
+    public function getProgress()
+    {
+        $userId = Auth::id();
+        $today = now()->toDateString();
+        
+        $grounding = Grounding::where('user_id', $userId)
+            ->where('date', $today)
+            ->first();
+        
+        if (!$grounding) {
+            return response()->json([
+                'has_progress' => false,
+                'completed_steps' => [],
+                'step_inputs' => [],
+                'is_completed' => false
+            ]);
+        }
+        
+        $progress = json_decode($grounding->progress, true) ?? [];
+        
+        return response()->json([
+            'has_progress' => true,
+            'completed_steps' => $grounding->completed_steps ?? [],
+            'step_inputs' => $progress['step_inputs'] ?? [],
+            'is_completed' => $grounding->is_completed,
+            'completed_at' => $grounding->completed_at
+        ]);
+    }
+    
+    /**
+     * Check if user completed grounding today
+     */
+    public function checkTodayCompletion()
+    {
+        $userId = Auth::id();
+        $today = now()->toDateString();
+        
+        $completed = Grounding::where('user_id', $userId)
+            ->where('date', $today)
+            ->where('is_completed', true)
+            ->exists();
+        
+        return response()->json([
+            'completed' => $completed,
+            'date' => $today
+        ]);
+    }
+    
+    /**
+     * Get grounding history/stats
+     */
+    public function getStats()
+    {
+        $userId = Auth::id();
+        
+        $totalCompletions = Grounding::where('user_id', $userId)
+            ->where('is_completed', true)
+            ->count();
+        
+        $streak = $this->calculateCurrentStreak($userId);
+        $longestStreak = $this->calculateLongestStreak($userId);
+        
+        $recentCompletions = Grounding::where('user_id', $userId)
+            ->where('is_completed', true)
+            ->orderBy('date', 'desc')
+            ->limit(7)
+            ->get()
+            ->pluck('date');
+        
+        return response()->json([
+            'total_completions' => $totalCompletions,
+            'current_streak' => $streak,
+            'longest_streak' => $longestStreak,
+            'recent_dates' => $recentCompletions,
+            'completion_rate' => $this->calculateCompletionRate($userId)
+        ]);
+    }
+    
+    /**
+     * Save individual step inputs
+     */
+    public function saveStepInputs(Request $request)
+    {
+        $request->validate([
+            'step_index' => 'required|integer|min:0|max:4',
+            'inputs' => 'required|array',
+            'step_completed' => 'boolean'
+        ]);
+        
+        $userId = Auth::id();
+        $today = now()->toDateString();
+        
+        $grounding = Grounding::firstOrNew([
+            'user_id' => $userId,
+            'date' => $today
+        ]);
+        
+        $progress = json_decode($grounding->progress, true) ?? [];
+        
+        // Initialize step inputs array if not exists
+        if (!isset($progress['step_inputs'])) {
+            $progress['step_inputs'] = [];
+        }
+        
+        // Save inputs for this step
+        $progress['step_inputs'][$request->step_index] = $request->inputs;
+        $progress['last_updated'] = now()->toDateTimeString();
+        
+        $grounding->progress = json_encode($progress);
+        
+        if ($request->step_completed) {
+            $completedSteps = json_decode($grounding->completed_steps_json, true) ?? [];
+            if (!in_array($request->step_index, $completedSteps)) {
+                $completedSteps[] = $request->step_index;
+                $grounding->completed_steps_json = json_encode($completedSteps);
+                $grounding->completed_steps = count($completedSteps);
+            }
+            
+            // Check if all steps are completed
+            if (count($completedSteps) >= 5) {
+                $grounding->is_completed = true;
+                $grounding->completed_at = now();
+                $this->awardXP($userId, 0.5);
+            }
+        }
+        
+        $grounding->save();
+        
+        return response()->json([
+            'success' => true,
+            'completed_steps' => json_decode($grounding->completed_steps_json, true) ?? [],
+            'is_completed' => $grounding->is_completed
+        ]);
+    }
+    
+    /**
+     * Reset today's progress (start over)
+     */
+    public function resetProgress()
+    {
+        $userId = Auth::id();
+        $today = now()->toDateString();
+        
+        $deleted = Grounding::where('user_id', $userId)
+            ->where('date', $today)
+            ->delete();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Progress reset'
+        ]);
+    }
+    
+    /**
+     * Get all grounding history for the user
+     */
+    public function getHistory(Request $request)
+    {
+        $userId = Auth::id();
+        $limit = $request->get('limit', 30);
+        
+        $history = Grounding::where('user_id', $userId)
+            ->where('is_completed', true)
+            ->orderBy('date', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(function($item) {
+                return [
+                    'date' => $item->date,
+                    'completed_at' => $item->completed_at,
+                    'steps_completed' => $item->completed_steps
+                ];
+            });
+        
+        return response()->json($history);
+    }
+    
+    // ────────────────── PRIVATE HELPER METHODS ──────────────────
+    
+    /**
+     * Format step inputs for storage
+     */
+    private function formatStepInputs($inputs)
+    {
+        $formatted = [];
+        foreach ($inputs as $stepIndex => $stepInputs) {
+            $formatted[$stepIndex] = array_values(array_filter($stepInputs, function($value) {
+                return !empty(trim($value));
+            }));
+        }
+        return $formatted;
+    }
+    
+    /**
+     * Award XP to user for completing grounding
+     */
+    private function awardXP($userId, $amount)
+    {
+        // You can create an XP model or use session
+        // For now, we'll store in a user_xp table or session
+        $currentXP = session()->get('user_xp_' . $userId, 0);
+        session()->put('user_xp_' . $userId, $currentXP + $amount);
+        
+        // Or create an XP model
+        // XP::create(['user_id' => $userId, 'amount' => $amount, 'source' => 'grounding']);
+        
+        return true;
+    }
+    
+    /**
+     * Calculate current streak of grounding completions
+     */
+    private function calculateCurrentStreak($userId)
+    {
+        $streak = 0;
+        $currentDate = now()->toDateString();
+        
+        $completionDates = Grounding::where('user_id', $userId)
+            ->where('is_completed', true)
+            ->orderBy('date', 'desc')
+            ->pluck('date')
+            ->toArray();
+        
+        $checkDate = $currentDate;
+        while (in_array($checkDate, $completionDates)) {
+            $streak++;
+            $checkDate = date('Y-m-d', strtotime($checkDate . ' -1 day'));
+        }
+        
+        return $streak;
+    }
+    
+    /**
+     * Calculate longest streak of grounding completions
+     */
+    private function calculateLongestStreak($userId)
+    {
+        $completionDates = Grounding::where('user_id', $userId)
+            ->where('is_completed', true)
+            ->orderBy('date', 'asc')
+            ->pluck('date')
+            ->toArray();
+        
+        $longestStreak = 0;
+        $currentStreak = 0;
+        $previousDate = null;
+        
+        foreach ($completionDates as $date) {
+            if ($previousDate && strtotime($date) === strtotime($previousDate . ' +1 day')) {
+                $currentStreak++;
+            } else {
+                $currentStreak = 1;
+            }
+            
+            $longestStreak = max($longestStreak, $currentStreak);
+            $previousDate = $date;
+        }
+        
+        return $longestStreak;
+    }
+    
+    /**
+     * Calculate completion rate (last 30 days)
+     */
+    private function calculateCompletionRate($userId)
+    {
+        $last30Days = [];
+        for ($i = 0; $i < 30; $i++) {
+            $last30Days[] = now()->subDays($i)->toDateString();
+        }
+        
+        $completions = Grounding::where('user_id', $userId)
+            ->where('is_completed', true)
+            ->whereIn('date', $last30Days)
+            ->count();
+        
+        return round(($completions / 30) * 100, 1);
+    }
+}
