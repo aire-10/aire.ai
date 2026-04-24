@@ -63,7 +63,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // CHAT
     // =====================
     Route::view('/chat', 'chat');
-    Route::post('/chat', [ChatController::class, 'send']);
+    Route::post('/chat/send', [ChatController::class, 'send']);
 
     // =====================
     // JOURNAL

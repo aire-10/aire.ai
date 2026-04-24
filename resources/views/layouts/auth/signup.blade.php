@@ -9,15 +9,21 @@
       <h1 class="auth-title">Create your account</h1>
       <p class="auth-subtitle">Start your journey with Airé 🌿</p>
 
-      <form class="auth-form" id="signupForm">
+      <form method="POST" action="{{ url('/signup') }}" class="auth-form">
+        @csrf
+        @if ($errors->any())
+          <div class="auth-error">
+            {{ $errors->first() }}
+          </div>
+        @endif
         <div class="auth-field">
           <label for="name">Full Name</label>
-          <input id="name" name="name" type="text" placeholder="e.g. Ainaa Roslan" required />
+          <input id="name" name="name" type="text" placeholder="e.g. Full Name" required />
         </div>
 
         <div class="auth-field">
           <label for="email">Email</label>
-          <input id="email" name="email" type="email" placeholder="e.g. ainaa@email.com" required />
+          <input id="email" name="email" type="email" placeholder="e.g. name@email.com" required />
         </div>
 
         <div class="auth-grid-2">
@@ -28,7 +34,7 @@
 
           <div class="auth-field">
             <label for="confirm">Confirm Password</label>
-            <input id="confirm" name="confirm" type="password" placeholder="Repeat password" required />
+            <input id="confirm" name="password_confirmation" type="password" placeholder="Repeat password" required />
           </div>
         </div>
 
@@ -81,7 +87,6 @@
 
 @section('scripts')
 
-<script src="{{ asset('js/navbar.js') }}"></script>
 <script src="{{ asset('js/signup.js') }}"></script>
 
 @endsection

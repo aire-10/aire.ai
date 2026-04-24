@@ -144,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function openSession(id) {
     localStorage.setItem(STORAGE_ACTIVE, id);
-    window.location.href = `chat.html?id=${encodeURIComponent(id)}`;
+    window.location.href = `/chat?id=${encodeURIComponent(id)}`;
   }
 
   function closeMenus() {

@@ -4,9 +4,6 @@
 @section('body-class', 'history-page')
 
 @section('content')
-<script>
-    if (!localStorage.getItem("authToken")) window.location.href = "{{ route('login') }}";
-</script>
 
 <main class="history-wrap">
     <header class="history-hero">

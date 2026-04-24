@@ -9,10 +9,18 @@
       <h1 class="auth-title">Welcome back</h1>
       <p class="auth-subtitle">Log in to continue your journey 🌿</p>
 
-      <form class="auth-form">
+      <form method="POST" action="{{ url('/login') }}" class="auth-form">
+        @csrf
+
+        @if ($errors->any())
+          <div class="auth-error">
+            {{ $errors->first() }}
+          </div>
+        @endif
+
         <div class="auth-field">
           <label for="email">Email</label>
-          <input id="email" name="email" type="email" placeholder="e.g. ainaa@email.com" required />
+          <input id="email" name="email" type="email" placeholder="e.g. name@email.com" required />
         </div>
 
         <div class="auth-field">
@@ -46,18 +54,5 @@
 
 @section('scripts')
 
-<script src="{{ asset('js/navbar.js') }}"></script>
-
-<script>
-document.querySelector(".auth-form").addEventListener("submit", function(e){
-  e.preventDefault();
-
-  // TEMP demo login token (later Java will return a real token)
-  localStorage.setItem("authToken", "demo-token");
-
-  // Redirect to chat page
-  window.location.href = "{{ url('chat') }}";
-});
-</script>
 
 @endsection
