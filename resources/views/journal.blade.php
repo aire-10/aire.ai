@@ -70,9 +70,10 @@
           <div class="journal-upload-row">
             <label class="upload-label">
               📎 Add a photo
-              <input type="file" id="imageInput" accept="image/*" />
+              <input type="file" id="imageInput" accept="image/*" hidden />
             </label>
-            <span class="upload-hint" id="uploadHint"></span>
+
+            <span class="upload-hint" id="uploadHint">No file selected</span>
           </div>
 
           <button class="journal-save-btn" type="button" onclick="saveEntry()">
@@ -97,9 +98,8 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 
-<script src="{{ asset('js/navbar.js') }}"></script>
 
 <script>
 document.getElementById("imageInput").addEventListener("change", function () {
@@ -130,73 +130,57 @@ if (historyTab && rightPage) {
 
 function saveEntry() {
   const text = document.getElementById("journalInput").value;
-  const imageInput = document.getElementById("imageInput");
-  const file = imageInput.files[0];
+  const file = document.getElementById("imageInput").files[0];
 
   if (text.trim() === "") {
     alert("Please write something first.");
     return;
   }
 
-  if (file && file.size > 5 * 1024 * 1024) {
-    alert("Image too large. Please upload an image smaller than 5MB.");
-    return;
+  const formData = new FormData();
+  formData.append("content", text);
+
+  if (file) {
+    formData.append("image", file);
   }
 
-  if (file && !file.type.startsWith("image/")) {
-    alert("Only image files are allowed.");
-    return;
-  }
+  fetch("/journal", {
+    method: "POST",
+    headers: {
+      "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+    },
+    body: formData
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Failed");
+    return res.json();
+  })
+  .then(data => {
+    document.getElementById("journalInput").value = "";
 
-  const reader = new FileReader();
+    const input = document.getElementById("imageInput");
+    const newInput = input.cloneNode(true);
 
-  reader.onerror = function() {
-    alert("Failed to read image file.");
-  };
+    input.parentNode.replaceChild(newInput, input);
 
-  reader.onload = function(e) {
-    const entries = JSON.parse(localStorage.getItem("journalEntries")) || [];
-    const now = new Date();
-
-    const day = now.getDate();
-    const month = now.toLocaleString('en-US', { month: 'long' }).toUpperCase();
-    const year = now.getFullYear();
-
-    const dateString = `${day} ${month} ${year}`;
-    const timeString = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-    entries.push({
-      date: `${dateString} • ${timeString}`,
-      month: now.toLocaleString("default", { month: "long" }),
-      text: text,
-      image: file ? e.target.result : null,
+    // Re-attach event listener
+    newInput.addEventListener("change", function () {
+      const hint = document.getElementById("uploadHint");
+      hint.textContent = this.files[0] ? "📄 " + this.files[0].name : "";
     });
 
-    try {
-      localStorage.setItem("journalEntries", JSON.stringify(entries));
-    } catch {
-      alert("Storage full. Try a smaller image or clearing history.");
-      return;
-    }
+    // Clear hint
+    document.getElementById("uploadHint").textContent = "";
 
     const msg = document.getElementById("saveMessage");
     msg.classList.add("show");
 
-    setTimeout(function() {
-      msg.classList.remove("show");
-    }, 2500);
-
-    document.getElementById("journalInput").value = "";
-    imageInput.value = "";
-    document.getElementById("uploadHint").textContent = "";
-  };
-
-  if (file) {
-    reader.readAsDataURL(file);
-  } else {
-    reader.onload({ target: { result: null } });
-  }
+    setTimeout(() => msg.classList.remove("show"), 2500);
+  })
+  .catch(() => {
+    alert("Failed to save journal.");
+  });
 }
 </script>
 
-@endsection
+@endpush

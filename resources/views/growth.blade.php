@@ -4,9 +4,9 @@
 @section('body-class', 'dash-body')
 
 @push('head-scripts')
-  <script src="{{ asset('aire-data.js') }}" defer></script>
+  <script src="{{ asset('js/aire-data.js') }}" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script src="{{ asset('growth.js') }}" defer></script>
+  <script src="{{ asset('js/growth.js') }}" defer></script>
 @endpush
 
 @section('content')
