@@ -12,7 +12,7 @@ class ForgotPasswordController extends Controller
     // Show forgot password page
     public function showForgotForm()
     {
-        return view('forgotpassword');
+        return view('layouts.auth.forgotpassword');
     }
 
     // Handle reset
