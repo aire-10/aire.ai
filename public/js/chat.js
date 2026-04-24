@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // Get DOM elements
   const chatMessages = document.getElementById("chatMessages");
   const chatForm = document.querySelector(".chat-inputbar");
@@ -18,8 +18,31 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================================================
   // GEMINI API CONFIGURATION
   // ============================================================
-  const GEMINI_API_KEY = "AIzaSyDAy2Pt1rOj5t6GjTTiP4-pexE6PMaRFfo";
-  const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent";
+  
+  async function getAIResponse(userMessage) {
+    try {
+      const response = await fetch(window.location.origin + '/chat/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+          body: JSON.stringify({ 
+            message: userMessage,
+            session_id: activeId // IMPORTANT
+          })
+      });
+
+      const data = await response.json();
+      console.log("SERVER RESPONSE:", data);
+      return data.reply;
+
+    } catch (error) {
+      console.error(error);
+      return "🌸 Something went wrong. Try again. 💚";
+    }
+  }
+
 
   const SYSTEM_PROMPT = `You are Airé, a compassionate mental wellness AI companion. 
 Keep responses short (1-2 sentences). Use emojis occasionally.
@@ -214,6 +237,28 @@ REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encou
     saveSessions(sessions);
   }
 
+// ============================================================
+// LOAD FROM BACKEND (NEW)
+// ============================================================
+
+async function loadChatFromServer(sessionId) {
+  try {
+    const res = await fetch(`/history/session/${sessionId}`);
+    const data = await res.json();
+
+    messages = data.messages.map(m => ({
+      role: m.isUser ? 'user' : 'bot',
+      text: m.isUser ? m.text : m.response,
+      ts: m.timestamp
+    }));
+
+    renderAll();
+
+  } catch (error) {
+    console.error("Failed to load chat from server:", error);
+  }
+}
+
   // ============================================================
   // MOOD LOGGING
   // ============================================================
@@ -248,69 +293,6 @@ REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encou
   }
 
   // ============================================================
-  // GEMINI API CALL - SIMPLIFIED
-  // ============================================================
-  let isWaitingForResponse = false;
-
-  async function getAIResponse(userMessage) {
-    if (isWaitingForResponse) {
-      return "⏰ Please wait a moment before sending another message. 💚";
-    }
-
-    isWaitingForResponse = true;
-
-    try {
-      console.log("Calling Gemini API...");
-
-      const requestBody = {
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: SYSTEM_PROMPT + "\n\nUser says: " + userMessage + "\n\nRespond as Airé (1-2 sentences):" }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 5000,
-          topP: 0.95,
-        },
-      };
-
-      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log("Response status:", response.status);
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          return "⏰ Please wait a moment before sending another message. 💚";
-        }
-        if (response.status === 403 || response.status === 401) {
-          return "🔑 API key issue. Please check your Gemini API key. 💚";
-        }
-        return "🌸 I'm here for you. Please try again. 💚";
-      }
-
-      const data = await response.json();
-
-      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-        return data.candidates[0].content.parts[0].text.trim();
-      }
-
-      return "🌸 How can I support you today? 💚";
-
-    } catch (error) {
-      console.error("API call failed:", error);
-      return "🌸 Please try again in a moment. I'm here for you. 💚";
-    } finally {
-      isWaitingForResponse = false;
-    }
-  }
-
-  // ============================================================
   // INITIALIZE SESSION
   // ============================================================
   const urlSessionId = getSessionIdFromURL();
@@ -319,9 +301,16 @@ REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encou
   }
 
   const { activeId } = ensureActiveSession();
-  let messages = loadSessionMessages(activeId);
+  let messages = [];
   let lastRenderedDay = null;
 
+  // 🔥 LOAD FROM DATABASE INSTEAD OF LOCALSTORAGE
+  const urlParams = new URLSearchParams(window.location.search);
+  const sessionIdFromURL = urlParams.get('id');
+
+  const finalSessionId = sessionIdFromURL || activeId;
+
+  await loadChatFromServer(finalSessionId);
   // ============================================================
   // RENDERING
   // ============================================================
@@ -549,7 +538,7 @@ REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encou
       saveSessions(sessions);
       saveSessionMessages(id, []);
       setActiveSessionId(id);
-      location.href = `chat.html?id=${encodeURIComponent(id)}`;
+      location.href = `/chat?id=${encodeURIComponent(id)}`;
     });
   }
 
@@ -585,5 +574,5 @@ REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encou
   updateUserAtBottom();
 
   console.log("Chat initialized successfully!");
-  console.log("Gemini API URL:", GEMINI_API_URL);
+  // console.log("Gemini API URL:", GEMINI_API_URL);
 });

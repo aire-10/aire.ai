@@ -11,14 +11,25 @@
             Enter your email and we’ll send you a reset link.
         </p>
 
-        <form class="auth-form" method="POST" action="{{ route('password.email') }}">
+        <form class="auth-form" method="POST" action="{{ url('/forgot-password') }}">
             @csrf
+
             <div class="auth-field">
                 <label for="email">Email</label>
-                <input id="email" name="email" type="email" placeholder="e.g. ainaa@email.com" required />
+                <input id="email" name="email" type="email" required />
             </div>
 
-            <button type="submit" class="auth-btn">Send Reset Link</button>
+            <div class="auth-field">
+                <label for="password">New Password</label>
+                <input id="password" name="password" type="password" required />
+            </div>
+
+            <div class="auth-field">
+                <label for="password_confirmation">Confirm Password</label>
+                <input id="password_confirmation" name="password_confirmation" type="password" required />
+            </div>
+
+            <button type="submit" class="auth-btn">Reset Password</button>
 
             <p class="auth-foot">
                 Remember your password?

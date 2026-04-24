@@ -18,18 +18,38 @@ class ChatController extends Controller
 
     public function send(Request $request)
     {
-        $message = $request->input('message');
+        try {
+            $message = $request->input('message');
+            $sessionId = $request->input('session_id'); // NEW
 
-        $reply = $this->ai->sendMessage($message);
+            $reply = $this->ai->sendMessage($message);
 
-        Chat::create([
-            'user_id' => Auth::id(),
-            'message' => $message,
-            'reply' => $reply
-        ]);
+            // ✅ SAVE USER MESSAGE
+            Chat::create([
+                'user_id' => Auth::id(),
+                'session_id' => $sessionId,
+                'message' => $message,
+                'is_user_message' => true,
+            ]);
 
-        return response()->json([
-            'reply' => $reply
-        ]);
+            // ✅ SAVE AI RESPONSE
+            Chat::create([
+                'user_id' => Auth::id(),
+                'session_id' => $sessionId,
+                'message' => $message,
+                'response' => $reply,
+                'is_user_message' => false,
+            ]);
+
+            return response()->json([
+                'reply' => $reply
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'reply' => '❌ ERROR: ' . $e->getMessage()
+            ]);
+        }
     }
+
 }
