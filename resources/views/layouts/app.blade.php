@@ -42,7 +42,12 @@
 
         <!-- Profile -->
         <div class="nav-profile">
-            <img src="{{ asset('images/profile.jpeg') }}" alt="Profile"/>
+            <img 
+                src="{{ Auth::user()->profile_photo 
+                    ? asset('storage/' . Auth::user()->profile_photo) 
+                    : asset('images/profile.jpeg') }}" 
+                alt="Profile"
+            />
 
             <div class="profile-dropdown">
             <a href="{{ url('/profile') }}">Profile</a>

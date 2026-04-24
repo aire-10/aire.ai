@@ -3,7 +3,7 @@
 @section('title', 'Airé • Profile')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/profile.css') }}">
+<link rel="stylesheet" href="{{ asset('css/style.css') }}">
 @endpush
 
 @section('content')
