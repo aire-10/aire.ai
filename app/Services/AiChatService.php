@@ -24,9 +24,9 @@ class AiChatService
                 if (strpos($userMessageLower, $keyword) !== false) {
                     return "💚 I hear that you're going through an extremely difficult time right now.\n\n" .
                            "Your feelings are valid, and you don't have to go through this alone.\n\n" .
-                           "📞 **Please reach out for immediate support:**\n" .
-                           "• **Talian Harapan:** 145 (24/7 crisis support)\n" .
-                           "• **Emergency:** 991\n\n" .
+                           "📞Please reach out for immediate support\n" .
+                           "•Talian Harapan 145 (24/7 crisis support)\n" .
+                           "•Emergency 991\n\n" .
                            "You matter. You are not alone. Please call them right now. 💚";
                 }
             }
@@ -134,7 +134,7 @@ REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encou
             if ($reply) {
                 // Add self-care suggestion if stress detected and not already in response
                 if ($isStressRelated && !str_contains(strtolower($reply), 'breath') && !str_contains(strtolower($reply), 'grounding') && !str_contains(strtolower($reply), 'self-care')) {
-                    $reply .= "\n\n🌿 Would you like to try a quick self-care exercise? Check out our **Breathing** or **Grounding** tools in the self-care section. 💚";
+                    $reply .= "\n\n🌿 Would you like to try a quick self-care exercise? Check out ourBreathin orGroundin tools in the self-care section. 💚";
                 }
                 return $reply;
             }
