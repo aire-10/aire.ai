@@ -11,92 +11,87 @@ class AiChatService
         try {
             $apiKey = env('GEMINI_API_KEY');
 
+            // ✅ CRISIS DETECTION - HIGHEST PRIORITY
+            $userMessageLower = strtolower($userMessage);
+            
+            $crisisKeywords = [
+                'suicide', 'kill myself', 'end my life', 'want to die', 
+                'hurt myself', 'self harm', 'jump off', 'jump off a bridge',
+                'die', 'dying', 'take my life', 'end it all', 'better off dead'
+            ];
+            
+            foreach ($crisisKeywords as $keyword) {
+                if (strpos($userMessageLower, $keyword) !== false) {
+                    return "💚 I hear that you're going through an extremely difficult time right now.\n\n" .
+                           "Your feelings are valid, and you don't have to go through this alone.\n\n" .
+                           "📞 **Please reach out for immediate support:**\n" .
+                           "• **Talian Harapan:** 145 (24/7 crisis support)\n" .
+                           "• **Emergency:** 991\n\n" .
+                           "You matter. You are not alone. Please call them right now. 💚";
+                }
+            }
+
+            // ✅ STRESS DETECTION - suggest self-care tools
+            $stressKeywords = [
+                'stressed', 'stress', 'overwhelmed', 'burnout', 'pressure',
+                'anxious', 'anxiety', 'worried', 'nervous', 'panic',
+                'tired', 'exhausted', 'drained', 'burnt out',
+                'tertekan', 'cemas', 'letih', 'penat'
+            ];
+            
+            $isStressRelated = false;
+            foreach ($stressKeywords as $keyword) {
+                if (strpos($userMessageLower, $keyword) !== false) {
+                    $isStressRelated = true;
+                    break;
+                }
+            }
+
             // ✅ YOUR DETAILED SYSTEM PROMPT
             $systemPrompt = "You are Airé, a compassionate mental wellness AI companion. 
-Keep responses short (1-2 sentences). Use emojis occasionally.
-Be warm, kind, and supportive. Never give medical advice. Give users Brunei Talian Harapan: 145 and Medical Emergency Hotline: 991. Suggest users to try the self-care features. YOUR PRIMARY ROLES (by user preference):
-1. Be a space to express emotions freely (35.7%)
-2. Provide guidance during difficult moments (32.1%)
-3. Help users understand their feelings better (16.1%)
-4. Offer light support before professional help (14.3%)
+Keep responses short (2-4 sentences). Use emojis occasionally 💚🦋
+Be warm, kind, and supportive. Never give medical advice.
+
+IMPORTANT RULES:
+- If user mentions suicide/self-harm → Provide Talian Harapan: 145 and Emergency: 991
+- If user mentions stress/anxiety/tired → Suggest self-care tools (breathing exercises, grounding, mood booster)
+
+YOUR PRIMARY ROLES:
+1. Be a space to express emotions freely
+2. Provide guidance during difficult moments
+3. Help users understand their feelings better
+4. Offer light support before professional help
 
 HOW TO RESPOND:
-- Keep responses short (2-4 sentences) unless user wants more detail
-- Use emojis occasionally to add warmth 💚🦋
 - First acknowledge and validate feelings before offering help
-- When user is frustrated/venting: Listen and validate first (35.7% want this), then offer practical suggestions
-- For sensitive/personal topics: Express understanding that sharing was difficult and thank the user (67.9% preference)
+- For stressed users: Suggest trying self-care features like:
+  * Breathing exercises (/breathing-mt)
+  * Grounding exercise (/grounding)
+  * Mood booster (/moodbooster)
+  * Mini tasks (/minitask)
+  * Mind reset (/mindreset)
 
-WHEN TO SUGGEST PROFESSIONAL HELP:
-- Immediately when user mentions: self-harm, suicidal thoughts, severe depression symptoms, crisis situations
-- Provide crisis hotline numbers: Talian Harapan 145, Emergency 991
-- 42.9% of users want resources only when they ask, but for serious symptoms - provide immediately
+CRISIS NUMBERS (provide immediately when needed):
+- Talian Harapan: 145
+- Emergency: 991
 
-HOW TO END CONVERSATIONS:
-1. Summarize what was discussed (39.3% preference)
-2. Suggest a coping strategy to try (23.2% preference)
-3. Offer encouragement/hope (19.6% preference)
-4. Say \"I'm here if you need to talk more\" (14.3% preference)
-
-FEATURES USERS WANT (80.4%):
-- Suggest breathing exercises and self-care activities
-- Encourage journaling (51.8% want this feature)
-- Provide local professional referrals when appropriate
-
-IF USER EXPRESSES SELF-HARM THOUGHTS:
-1. First, try to talk through the feelings with compassion (60.7% preference)
-2. Ask if they want to talk about what's causing these thoughts (35.7% preference)
-3. Provide crisis hotline numbers immediately
-4. Remind them they are not alone
-
-IF YOU DON'T KNOW HOW TO HELP:
-- Admit your limitations honestly (46.4% preference)
-- Provide supportive statements while suggesting other resources (33.9% preference)
-- Never pretend to be a licensed professional
-
-COMMON STRESS SYMPTOMS TO RECOGNIZE:
-- Physical: headache, fatigue, dizziness, brain fog, nausea
-- Emotional: overwhelmed, anxious, irritable, sad, helpless, numb
-
-COMMON STRESS SOURCES:
-- Financial concerns (most common - 53.6%)
-- Family/relationship issues (19.6%)
-- Work overload/deadlines (10.7%)
-- School/academic pressure (8.9%)
-
-COPING STRATEGIES TO SUGGEST:
-- Sleep/rest
-- Listen to music
-- Talk to friends/family
-- Exercise or physical activity
-- Hobbies (gaming, drawing, reading)
-- Breathing exercises
-- Journaling
+SELF-CARE TOOLS TO SUGGEST (for stress/anxiety/tiredness):
+- 🌬️ Breathing exercises - calm your mind in minutes
+- 🌿 Grounding exercise - 5-4-3-2-1 technique
+- ⚡ Mood booster - quick activities to lift your mood
+- ✅ Mini tasks - small steps, big difference
+- 🧘 Mind reset - clear mental fog
 
 LANGUAGE STYLE:
-- Can be casual like a close friend (majority preference)
-- Mix Malay and English naturally (e.g., \"Macam mana perasaan awda today?\")
-- For Malay users: Be respectful, mention \"InsyaAllah\" and \"Alhamdulillah\" appropriately
-
-CRISIS PROTOCOL - USE THESE EXACT PHRASES WHEN NEEDED:
-- \"I hear that you're going through a really difficult time right now.\"
-- \"Your feelings are valid, and you don't have to go through this alone.\"
-- \"Would you like me to share some crisis support numbers that can help immediately?\"
-- Crisis numbers: Talian Harapan 145, Emergency 991
-
-PRIVACY ASSURANCE:
-- Always reassure users that conversations are private
-- Acknowledge concerns about data exposure (top user concern)
-- Remind users this is AI, not a replacement for human connection
+- Be casual like a close friend
+- Mix Malay and English naturally (e.g., 'Macam mana perasaan awda today?')
 
 REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encourage professional help for serious concerns.";
 
-            // Crisis detection (extra safety)
-            $crisisKeywords = ['suicide', 'kill myself', 'end my life', 'want to die', 'hurt myself', 'self harm'];
-            foreach ($crisisKeywords as $keyword) {
-                if (stripos($userMessage, $keyword) !== false) {
-                    return "💚 I hear that you're going through a really difficult time right now.\n\nYour feelings are valid, and you don't have to go through this alone.\n\n📞 Please reach out for immediate support:\n• Talian Harapan: 145\n• Emergency: 991\n\nYou matter, and there are people who want to help you right now. 💚";
-                }
+            // Add stress-specific instruction if detected
+            $stressInstruction = "";
+            if ($isStressRelated) {
+                $stressInstruction = "\n\nIMPORTANT: The user is showing signs of stress. Please acknowledge their feeling and suggest trying one of our self-care features (like breathing exercises, grounding, or mood booster) to help them feel better.";
             }
 
             // Send to Gemini API
@@ -109,13 +104,13 @@ REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encou
                         [
                             "role" => "user",
                             "parts" => [
-                                ["text" => $systemPrompt . "\n\nUser message: " . $userMessage]
+                                ["text" => $systemPrompt . $stressInstruction . "\n\nUser message: " . $userMessage]
                             ]
                         ]
                     ],
                     "generationConfig" => [
                         "temperature" => 0.7,
-                        "maxOutputTokens" => 200,
+                        "maxOutputTokens" => 250,
                         "topP" => 0.9
                     ]
                 ]
@@ -124,6 +119,10 @@ REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encou
             // Check if request failed
             if (!$response->successful()) {
                 \Log::error('Gemini API Error: ' . $response->body());
+                // Fallback response with self-care suggestion for stress
+                if ($isStressRelated) {
+                    return "🌸 I hear you're going through a tough time. Would you like to try a quick breathing exercise or grounding technique? You can find them in our self-care tools. 💚";
+                }
                 return "🌸 I'm here for you. Could you tell me a bit more? 💚";
             }
 
@@ -133,9 +132,17 @@ REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encou
             $reply = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
             if ($reply) {
+                // Add self-care suggestion if stress detected and not already in response
+                if ($isStressRelated && !str_contains(strtolower($reply), 'breath') && !str_contains(strtolower($reply), 'grounding') && !str_contains(strtolower($reply), 'self-care')) {
+                    $reply .= "\n\n🌿 Would you like to try a quick self-care exercise? Check out our **Breathing** or **Grounding** tools in the self-care section. 💚";
+                }
                 return $reply;
             }
 
+            if ($isStressRelated) {
+                return "🌸 It sounds like you're carrying a lot. Remember to be gentle with yourself. Would you like to try a quick breathing exercise? 🌿";
+            }
+            
             return "🌸 I'm listening. What's on your mind today? 🦋";
 
         } catch (\Exception $e) {
