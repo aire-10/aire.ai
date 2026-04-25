@@ -10,4 +10,9 @@ class BreathingSession extends Model
         'user_id',
         'duration'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

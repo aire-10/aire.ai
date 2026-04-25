@@ -114,7 +114,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/history', [HistoryController::class, 'index'])->name('history');
     Route::get('/history/sessions', [HistoryController::class, 'getSessions'])->name('history.sessions');
     Route::get('/history/session/{id}', [HistoryController::class, 'getSession'])
-        ->where('id', '.*')
+        ->where('id', '[A-Za-z0-9\-_]+')
         ->name('history.session');
     Route::post('/history/session', [HistoryController::class, 'createSession'])->name('history.session.create');
     Route::post('/history/session/{id}/rename', [HistoryController::class, 'renameSession'])->name('history.session.rename');

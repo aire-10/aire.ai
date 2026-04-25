@@ -19,24 +19,20 @@ class RegisterController extends Controller
     // Handle registration
     public function register(Request $request)
     {
-        // ✅ Validate input
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'min:6', 'confirmed'],
         ]);
 
-        // ✅ Create user
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
 
-        // ✅ Auto login after register
         Auth::login($user);
 
-        // ✅ Redirect
-        return redirect('/chat');
+        return redirect('/home');
     }
 }

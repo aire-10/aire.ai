@@ -166,8 +166,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // =========================
     // TOGGLE DROPDOWN
     // =========================
-    if (e.target.classList.contains("history-kebab")) {
-      const row = e.target.closest(".history-row");
+    const kebabBtn = e.target.closest(".history-kebab");
+    if (kebabBtn) {
+      e.stopPropagation();
+
+      const row = kebabBtn.closest(".history-row");
       const menu = row.querySelector(".history-menu");
 
       document.querySelectorAll(".history-menu").forEach(m => {
@@ -182,6 +185,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // RENAME
     // =========================
     if (e.target.classList.contains("rename-btn")) {
+      e.stopPropagation();
+
       const row = e.target.closest(".history-row");
       const id = row.dataset.id;
 
@@ -194,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
           "Content-Type": "application/json",
           "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
         },
-        body: JSON.stringify({ title: newName })
+        body: JSON.stringify({ name: newName })
       });
 
       render();
@@ -205,14 +210,23 @@ document.addEventListener("DOMContentLoaded", () => {
     // DELETE
     // =========================
     if (e.target.classList.contains("delete-btn")) {
+      e.stopPropagation();
+
       const row = e.target.closest(".history-row");
       const id = row.dataset.id;
 
-      const confirmDelete = confirm("Delete this chat?");
-      if (!confirmDelete) return;
+      if (!confirm("Delete this chat?")) return;
 
       await deleteSession(id);
       render();
+      return;
+    }
+
+    // =========================
+    // 🔥 NOW handle menu click block
+    // =========================
+    if (e.target.closest(".history-menu")) {
+      e.stopPropagation();
       return;
     }
 
@@ -248,11 +262,17 @@ document.addEventListener("DOMContentLoaded", () => {
   render();
 
   document.addEventListener("click", (e) => {
+
+    // Ignore clicks on kebab or menu
+    if (e.target.closest(".history-kebab") || e.target.closest(".history-menu")) {
+      return;
+    }
+
+    // Close all menus
     document.querySelectorAll(".history-menu").forEach(m => {
-      if (!m.contains(e.target)) {
-        m.classList.remove("is-open");
-      }
+      m.classList.remove("is-open");
     });
+
   });
 
 // =========================

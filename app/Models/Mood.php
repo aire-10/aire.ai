@@ -8,6 +8,18 @@ class Mood extends Model
 {
     protected $fillable = [
         'user_id',
-        'mood'
+        'mood_level',
+        'notes',
+        'date'
     ];
+
+    protected $casts = [
+        'date' => 'date',
+        'mood_level' => 'integer'
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

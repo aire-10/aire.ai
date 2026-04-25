@@ -15,9 +15,13 @@ class MoodController extends Controller
             'mood' => 'required|string'
         ]);
 
+        $moodLevel = $this->mapMoodNameToLevel($request->mood);
+
         Mood::create([
             'user_id' => Auth::id(),
-            'mood' => $request->mood
+            'mood_level' => $moodLevel,
+            'notes' => $request->notes ?? '',
+            'date' => now()->toDateString()
         ]);
 
         return response()->json([
@@ -33,5 +37,20 @@ class MoodController extends Controller
             ->get();
 
         return view('moodtracker', compact('moods'));
+    }
+
+    // Map mood name to numeric level
+    private function mapMoodNameToLevel($name)
+    {
+        $map = [
+            'joyful' => 10,
+            'happy' => 8,
+            'content' => 6,
+            'neutral' => 5,
+            'anxious' => 3,
+            'tired' => 3,
+            'sad' => 2
+        ];
+        return $map[$name] ?? 5;
     }
 }

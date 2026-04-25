@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AiChatService
 {
@@ -10,6 +11,9 @@ class AiChatService
     {
         try {
             $apiKey = env('GEMINI_API_KEY');
+            
+            // Log that we received a message
+            Log::info('Chat message received: ' . substr($userMessage, 0, 100));
 
             // ✅ CRISIS DETECTION - HIGHEST PRIORITY
             $userMessageLower = strtolower($userMessage);
@@ -22,11 +26,12 @@ class AiChatService
             
             foreach ($crisisKeywords as $keyword) {
                 if (strpos($userMessageLower, $keyword) !== false) {
+                    Log::info('Crisis detected: ' . $keyword);
                     return "💚 I hear that you're going through an extremely difficult time right now.\n\n" .
                            "Your feelings are valid, and you don't have to go through this alone.\n\n" .
-                           "📞Please reach out for immediate support\n" .
-                           "•Talian Harapan 145 (24/7 crisis support)\n" .
-                           "•Emergency 991\n\n" .
+                           "📞 Please reach out for immediate support:\n" .
+                           "• Talian Harapan: 145 (24/7 crisis support)\n" .
+                           "• Emergency: 991\n\n" .
                            "You matter. You are not alone. Please call them right now. 💚";
                 }
             }
@@ -35,7 +40,7 @@ class AiChatService
             $stressKeywords = [
                 'stressed', 'stress', 'overwhelmed', 'burnout', 'pressure',
                 'anxious', 'anxiety', 'worried', 'nervous', 'panic',
-                'tired', 'exhausted', 'drained', 'burnt out',
+                'tired', 'exhausted', 'drained', 'burnt out', 'calm', 'relax',
                 'tertekan', 'cemas', 'letih', 'penat'
             ];
             
@@ -43,111 +48,116 @@ class AiChatService
             foreach ($stressKeywords as $keyword) {
                 if (strpos($userMessageLower, $keyword) !== false) {
                     $isStressRelated = true;
+                    Log::info('Stress detected: ' . $keyword);
                     break;
                 }
             }
 
-            // ✅ YOUR DETAILED SYSTEM PROMPT
-            $systemPrompt = "You are Airé, a compassionate mental wellness AI companion. 
-Keep responses short (2-4 sentences). Use emojis occasionally 💚🦋
-Be warm, kind, and supportive. Never give medical advice.
+            // ✅ SIMPLER SYSTEM PROMPT - More direct
+            $systemPrompt = "You are Airé, a warm, caring mental wellness companion. Keep responses short (2-3 sentences).
 
-IMPORTANT RULES:
-- If user mentions suicide/self-harm → Provide Talian Harapan: 145 and Emergency: 991
-- If user mentions stress/anxiety/tired → Suggest self-care tools (breathing exercises, grounding, mood booster)
+RULES:
+- If user mentions stress/anxiety/tired: Suggest breathing exercises or grounding techniques
+- If user asks for suggestions: Give specific self-care activities
+- Be conversational like a close friend
 
-YOUR PRIMARY ROLES:
-1. Be a space to express emotions freely
-2. Provide guidance during difficult moments
-3. Help users understand their feelings better
-4. Offer light support before professional help
+SELF-CARE TOOLS TO SUGGEST:
+- 🌬️ Breathing exercise: Inhale 4 sec, hold 4 sec, exhale 6 sec
+- 🌿 5-4-3-2-1 grounding: Name 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you like
+- ⚡ Quick mood booster: Listen to a favorite song or stretch for 2 minutes
+- ✅ Small task: Drink water or take 5 deep breaths
+- 🧘 Mind reset: Step away from screens for 5 minutes
 
-HOW TO RESPOND:
-- First acknowledge and validate feelings before offering help
-- For stressed users: Suggest trying self-care features like:
-  * Breathing exercises (/breathing-mt)
-  * Grounding exercise (/grounding)
-  * Mood booster (/moodbooster)
-  * Mini tasks (/minitask)
-  * Mind reset (/mindreset)
+Examples:
+User: 'I'm stressed' → 'I hear you. Let's try a quick breathing exercise together. Inhale... 1, 2, 3, 4. Exhale... 🌬️'
+User: 'What should I do?' → 'How about a 5-4-3-2-1 grounding exercise? Look around and name 5 things you can see right now. 🌿'
+User: 'Need something to calm me' → 'I understand. Try taking 5 slow deep breaths. Breathe in calm, breathe out tension. Want me to guide you? 🦋'
 
-CRISIS NUMBERS (provide immediately when needed):
-- Talian Harapan: 145
-- Emergency: 991
+Be warm and helpful. Never give medical advice. Use emojis occasionally 💚";
 
-SELF-CARE TOOLS TO SUGGEST (for stress/anxiety/tiredness):
-- 🌬️ Breathing exercises - calm your mind in minutes
-- 🌿 Grounding exercise - 5-4-3-2-1 technique
-- ⚡ Mood booster - quick activities to lift your mood
-- ✅ Mini tasks - small steps, big difference
-- 🧘 Mind reset - clear mental fog
+            // Build the full prompt
+            $fullPrompt = $systemPrompt . "\n\n" . ($isStressRelated ? "IMPORTANT: User is showing signs of stress. Suggest self-care tools. " : "") . "User: " . $userMessage . "\n\nAiré:";
 
-LANGUAGE STYLE:
-- Be casual like a close friend
-- Mix Malay and English naturally (e.g., 'Macam mana perasaan awda today?')
-
-REMEMBER: You are a supportive companion, NOT a licensed therapist. Always encourage professional help for serious concerns.";
-
-            // Add stress-specific instruction if detected
-            $stressInstruction = "";
-            if ($isStressRelated) {
-                $stressInstruction = "\n\nIMPORTANT: The user is showing signs of stress. Please acknowledge their feeling and suggest trying one of our self-care features (like breathing exercises, grounding, or mood booster) to help them feel better.";
-            }
+            Log::info('Sending request to Gemini API');
 
             // Send to Gemini API
-            $response = Http::withHeaders([
+            $response = Http::timeout(30)->withHeaders([
                 'Content-Type' => 'application/json',
             ])->post(
                 "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={$apiKey}",
                 [
                     "contents" => [
                         [
-                            "role" => "user",
                             "parts" => [
-                                ["text" => $systemPrompt . $stressInstruction . "\n\nUser message: " . $userMessage]
+                                ["text" => $fullPrompt]
                             ]
                         ]
                     ],
                     "generationConfig" => [
-                        "temperature" => 0.7,
-                        "maxOutputTokens" => 250,
-                        "topP" => 0.9
+                        "temperature" => 0.8,
+                        "maxOutputTokens" => 200,
+                        "topP" => 0.9,
+                        "topK" => 40
                     ]
                 ]
             );
 
+            // Log response status
+            Log::info('Gemini API response status: ' . $response->status());
+
             // Check if request failed
             if (!$response->successful()) {
-                \Log::error('Gemini API Error: ' . $response->body());
-                // Fallback response with self-care suggestion for stress
+                Log::error('Gemini API Error: ' . $response->body());
+                
+                // Return appropriate fallback based on context
                 if ($isStressRelated) {
-                    return "🌸 I hear you're going through a tough time. Would you like to try a quick breathing exercise or grounding technique? You can find them in our self-care tools. 💚";
+                    return "🌸 I hear you're feeling overwhelmed. Try this: take 5 slow deep breaths. Breathe in... 1,2,3,4. Breathe out... 1,2,3,4. How do you feel? 🦋";
                 }
-                return "🌸 I'm here for you. Could you tell me a bit more? 💚";
+                return "🌸 I'm here for you. Would you like to try a quick breathing exercise together? 🌿";
             }
 
             $data = $response->json();
+            
+            // Log the response for debugging
+            Log::info('Gemini API response structure: ' . json_encode(array_keys($data)));
 
-            // Extract response
-            $reply = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+            // Extract response - different possible paths
+            $reply = null;
+            
+            if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                $reply = $data['candidates'][0]['content']['parts'][0]['text'];
+            } elseif (isset($data['candidates'][0]['output'])) {
+                $reply = $data['candidates'][0]['output'];
+            } elseif (isset($data['reply'])) {
+                $reply = $data['reply'];
+            }
 
-            if ($reply) {
-                // Add self-care suggestion if stress detected and not already in response
-                if ($isStressRelated && !str_contains(strtolower($reply), 'breath') && !str_contains(strtolower($reply), 'grounding') && !str_contains(strtolower($reply), 'self-care')) {
-                    $reply .= "\n\n🌿 Would you like to try a quick self-care exercise? Check out ourBreathin orGroundin tools in the self-care section. 💚";
-                }
+            if ($reply && trim($reply) !== '') {
+                Log::info('AI response: ' . substr($reply, 0, 100));
+                
+                // Clean up the response if it repeats the user message
+                $reply = trim($reply);
+                
+                // Remove any "Airé:" prefix if present
+                $reply = preg_replace('/^Airé:\s*/i', '', $reply);
+                
                 return $reply;
             }
 
+            Log::warning('Empty response from Gemini API');
+            
+            // Final fallback
             if ($isStressRelated) {
-                return "🌸 It sounds like you're carrying a lot. Remember to be gentle with yourself. Would you like to try a quick breathing exercise? 🌿";
+                return "🌸 Let's try something simple. Look around and name 5 things you can see right now. This grounding technique can help calm your mind. 🌿";
             }
             
-            return "🌸 I'm listening. What's on your mind today? 🦋";
+            return "🌸 I'm listening. Tell me more about how you're feeling. 💚";
 
         } catch (\Exception $e) {
-            \Log::error('Chat Error: ' . $e->getMessage());
-            return "🌸 Let's take a gentle breath together. I'm here for you. 💚";
+            Log::error('Chat Error: ' . $e->getMessage());
+            
+            // Friendly fallback
+            return "🌸 Let's take a gentle breath together. Inhale... exhale... I'm right here with you. What's on your mind? 💚";
         }
     }
 }
