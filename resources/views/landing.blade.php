@@ -22,7 +22,7 @@
 
     <div class="growth-card">
         <h3>Your Growth Journey 🌱</h3>
-        <img id="growthImage" src="{{ asset('assets/egg.png') }}" alt="growth stage" />
+        <img id="growthImage" src="{{ asset('images/egg.png') }}" alt="growth stage" />
         <p id="growthText">Start your journey 🌱</p>
     </div>
 </main>
@@ -62,7 +62,8 @@
                 <h3>Our Technology</h3>
                 <p>Airé understands your emotions and provides gentle, real-time support when you need it.</p>
             </div>
-            <div class="about-card"><h3>Data & Privacy</h3>
+            <div class="about-card">
+                <h3>Data & Privacy</h3>
                 <p>Your conversations should feel safe. We design for user control, security, and respect.</p>
             </div>
         </div>
@@ -75,6 +76,7 @@
 
 <script>
     document.getElementById("year").textContent = new Date().getFullYear();
+    
     // Growth system logic remains the same
     let streak = 0; 
     let mood = "neutral"; 
@@ -85,25 +87,25 @@
         if (!image || !text) return;
 
         if (streak === 0) {
-            image.src = "{{ asset('assets/egg.png') }}";
+            image.src = "{{ asset('images/egg.png') }}";
             text.innerText = "🐛 A new beginning 🦋";
         } else if (streak <= 2) {
-            image.src = "{{ asset('assets/pupa.png') }}";
+            image.src = "{{ asset('images/pupa.png') }}";
             text.innerText = "Growing slowly";
         } else if (streak <= 4) {
-            image.src = "{{ asset('assets/caterpillar.png') }}";
+            image.src = "{{ asset('images/caterpillar.png') }}";
             text.innerText = "Making progress";
         } else {
-            image.src = "{{ asset('assets/daisybutterfly.png') }}";
+            image.src = "{{ asset('images/adult_glow.png') }}";
             text.innerText = "You are thriving 🦋";
         }
 
         if (mood === "declining") {
-            image.src = "{{ asset('assets/surviving.jpeg') }}";
+            image.src = "{{ asset('images/surviving.jpeg') }}";
             text.innerText = "You're still trying — and that matters";
         }
         if (mood === "improving") {
-            image.src = "{{ asset('assets/struggling.jpeg') }}";
+            image.src = "{{ asset('images/struggling.jpeg') }}";
             text.innerText = "Healing takes time 💛";
         }
     }
