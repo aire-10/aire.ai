@@ -2,6 +2,28 @@
 
 @section('title', 'Airé • Your AI-powered mental wellness companion')
 
+@push('styles')
+<style>
+    .landing-page-container {
+        background-image: url('{{ asset("images/landing-butterfly-right.jpeg") }}');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        min-height: 100vh;
+    }
+    
+    .landing-hero {
+        background: transparent;
+    }
+    
+    .landing-section, .landing-footer {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(5px);
+        margin: 0;
+    }
+</style>
+@endpush
+
 @section('content')
 <main class="landing-hero split-layout">
     <div class="hero-card">
@@ -11,7 +33,7 @@
         <p class="hero-subtitle">Talk, reflect, and feel better — anytime.</p>
 
         <div class="hero-actions">
-            <a class="btn btn-filled btn-lg" href="{{ route('register') }}">Start Chatting</a>
+            <a class="btn btn-filled btn-lg" href="{{ route('login') }}">Start Chatting</a>
             <a class="btn btn-outline btn-lg" href="#features">Start Your Journey</a>
         </div>
 
