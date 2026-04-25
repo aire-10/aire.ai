@@ -51,18 +51,19 @@ const AireData = (() => {
   async function fetchFromAPI(endpoint, defaultValue = null) {
     try {
       const response = await fetch(`/api/${endpoint}`, {
+        method: "GET",
         headers: {
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
-      
-      const data = await response.json();
-      return data;
+
+      return await response.json();
+
     } catch (error) {
       console.error(`API fetch error (${endpoint}):`, error);
       return defaultValue;
@@ -71,10 +72,6 @@ const AireData = (() => {
 
   /* ── Fetch Mood Meta from API ── */
   async function fetchMoodMeta() {
-    const meta = await fetchFromAPI('mood-meta', MOOD_META);
-    if (meta) {
-      MOOD_META = { ...MOOD_META, ...meta };
-    }
     return MOOD_META;
   }
 
@@ -183,25 +180,24 @@ const AireData = (() => {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         },
-        body: JSON.stringify({ mood, note })
+        body: JSON.stringify({
+          mood: mood,
+          note: note
+        })
       });
-      
-      if (!response.ok) throw new Error('Failed to log mood');
-      
-      const result = await response.json();
-      
-      // Invalidate cache
-      cache.moodLog = null;
-      cache.streak = null;
-      cache.daysTracked = null;
-      cache.todayCheckIns = null;
-      cache.latestMood = null;
-      
-      return result;
+
+      if (!response.ok) {
+        const err = await response.text();
+        console.error("❌ Server error:", err);
+        throw new Error(`Failed (${response.status})`);
+      }
+
+      return await response.json();
+
     } catch (error) {
-      console.error('Error logging mood:', error);
+      console.error('❌ Error logging mood:', error);
       throw error;
     }
   }
@@ -221,7 +217,9 @@ const AireData = (() => {
   async function getLatestEntry() {
     const log = await getMoodLog();
     if (!log.length) return null;
-    return log.reduce((a, b) => (a.ts > b.ts ? a : b));
+    return log.reduce((a, b) =>
+      new Date(a.created_at) > new Date(b.created_at) ? a : b
+    );
   }
 
   /* ── Human-readable mood label ── */
@@ -298,7 +296,7 @@ const AireData = (() => {
     });
     return Object.entries(byDay)
       .sort(([a], [b]) => b.localeCompare(a))
-      .map(([date, e]) => ({ date, mood: e.mood, note: e.note, ts: e.ts }));
+      .map(([date, e]) => ({ date, mood: e.mood, note: e.notes, ts: e.created_at }));
   }
 
   /* ── XP Functions (using API points) ── */

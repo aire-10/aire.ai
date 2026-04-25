@@ -13,12 +13,12 @@
    ================================================================ */
 
 const STAGE_CONFIG = {
-  egg:         { img: "egg.png",         label: "Egg 🥚",        color: "#8a7060", xpMax: 10  },
-  caterpillar: { img: "caterpillar.png", label: "Caterpillar 🐛", color: "#7aab72", xpMax: 30  },
-  pupa:        { img: "pupa.png",        label: "Pupa 🦋",        color: "#4c7a60", xpMax: 50  },
-  butterfly:   { img: "adult_glow.png",  label: "Butterfly 🦋",   color: "#3a8c3a", xpMax: 100 },
-  surviving:   { img: "surviving.jpeg",  label: "Surviving 🌱",    color: "#b0a060", xpMax: 3   },
-  struggling:  { img: "struggling.jpeg", label: "Struggling 💔",   color: "#a07070", xpMax: 2   },
+  egg:         { img: "images/egg.png",         label: "Egg 🥚",        color: "#8a7060", xpMax: 10  },
+  caterpillar: { img: "images/caterpillar.png", label: "Caterpillar 🐛", color: "#7aab72", xpMax: 30  },
+  pupa:        { img: "images/pupa.png",        label: "Pupa 🦋",        color: "#4c7a60", xpMax: 50  },
+  butterfly:   { img: "images/adult_glow.png",  label: "Butterfly 🦋",   color: "#3a8c3a", xpMax: 100 },
+  surviving:   { img: "images/surviving.jpeg",  label: "Surviving 🌱",    color: "#b0a060", xpMax: 3   },
+  struggling:  { img: "images/struggling.jpeg", label: "Struggling 💔",   color: "#a07070", xpMax: 2   },
 };
 
 const NEXT_STAGE_LABEL = {
@@ -243,26 +243,34 @@ function renderHero(snapshots) {
 }
 
 /* ── Grow actions ─────────────────────────────────────── */
-function renderActions() {
-  const todayISO = new Date().toISOString().split("T")[0];
-  const log = AireData.getMoodLog();
-  const todayLogs = log.filter(e => e.date === todayISO);
-  const snapshots = buildSnapshots(log);
-  const current = getCurrentStage(snapshots);
-  const streak = current.streak;
+/* Update this section inside the renderActions() function in growth.js */
 
+async function renderActions() {
+
+  const todayISO = new Date().toISOString().split("T")[0];
+
+  // ✅ FIX 1: await
+  const log = await AireData.getMoodLog();
+
+  const todayLogs = log.filter(e => e.date === todayISO);
+  
   const hasToday = todayLogs.length > 0;
   const hasPositive = todayLogs.some(e => AireData.POSITIVE.includes(e.mood));
 
+  // localStorage ones (still okay for now)
   const bodyBoosterDone = localStorage.getItem("bodybooster-achieved") === todayISO;
   const miniTaskDone = localStorage.getItem("minitask-achieved") === todayISO;
   const mindResetDone = localStorage.getItem("mindreset-achieved") === todayISO;
-  const moodLiftingDone = localStorage.getItem("moodlifting-achieved") === todayISO;
+
+  // ✅ FIX 2: correct API call
+  const moodLiftingDone = await getMoodLiftingDone();
+
   const groundingDone = localStorage.getItem("grounding-achieved") === todayISO;
 
   const mark = (checkId, done) => {
     const el = document.getElementById(checkId);
     if (!el) return;
+
     el.textContent = done ? "✓" : "";
     el.style.background = done ? "#3a6b35" : "rgba(0,0,0,0.08)";
     el.style.borderColor = done ? "#3a6b35" : "rgba(0,0,0,0.15)";
@@ -277,6 +285,11 @@ function renderActions() {
   mark("checkMoodLifting", moodLiftingDone);
   mark("checkGrounding", groundingDone);
 }
+  async function getMoodLiftingDone() {
+    const res = await fetch("/moodlifting/check-today");
+    const data = await res.json();
+    return data.completed;
+  }
 
 /* ── Streak badges ────────────────────────────────────── */
 function renderStreakBadges() {
@@ -418,11 +431,11 @@ function renderTimeline(snapshots, log) {
 
 /* ── Init ─────────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", () => {
-  const log = AireData.getMoodLog();
+  const log = await AireData.getMoodLog();
   const snapshots = buildSnapshots(log);
 
   renderHero(snapshots);
-  renderActions();
+  await renderActions();
   renderStreakBadges();
   renderMoodChart(log);
   renderTimeline(snapshots, log);
@@ -430,12 +443,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
-    const log = AireData.getMoodLog();
+    const log = await AireData.getMoodLog();
     const snapshots = buildSnapshots(log);
     renderHero(snapshots);
-    renderActions();
+    await renderActions();
     renderStreakBadges();
     renderMoodChart(log);
     renderTimeline(snapshots, log);
   }
+});
+
+/* Add this to growth.js */
+function renderTimeline(snapshots) {
+    const el = document.getElementById("growthTimeline");
+    if (!el) return;
+
+    if (snapshots.length === 0) {
+        el.innerHTML = "<p>No history yet.</p>";
+        return;
+    }
+
+    el.innerHTML = snapshots.map(s => {
+        const meta = AireData.MOOD_META[s.mood] || { emoji: '❓', color: '#ccc' };
+        return `
+            <div class="timeline-item">
+                <div class="timeline-mood-icon">${meta.emoji}</div>
+                <div>
+                    <span class="timeline-date">${formatDayLabel(s.dayKey)}</span>
+                    <small style="color:${meta.color}; font-weight:bold;">${s.mood.toUpperCase()}</small>
+                    <p style="margin: 5px 0 0; font-size: 0.85rem;">${s.note || "No notes for today."}</p>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+// Ensure you call these inside your DOMContentLoaded or Init function:
+document.addEventListener('DOMContentLoaded', () => {
+    const log = await AireData.getMoodLog();
+    const snapshots = buildSnapshots(log);
+    
+    renderHero(snapshots);
+    await renderActions();
+    renderStreakBadges();
+    renderMoodChart(log);
+    renderTimeline(snapshots); // <--- Make sure this is called
 });

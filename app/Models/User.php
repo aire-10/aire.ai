@@ -24,6 +24,11 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+
+        'moodlifting' => 'array',
+        'mindreset' => 'array',
+        'minitask' => 'array',
+        'bodybooster' => 'array',
     ];
 
     public function chats()

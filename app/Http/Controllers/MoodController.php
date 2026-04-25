@@ -17,7 +17,7 @@ class MoodController extends Controller
 
         $moodLevel = $this->mapMoodNameToLevel($request->mood);
 
-        Mood::create([
+        $mood = Mood::create([
             'user_id' => Auth::id(),
             'mood_level' => $moodLevel,
             'notes' => $request->notes ?? '',
@@ -25,7 +25,8 @@ class MoodController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Mood saved'
+            'message' => 'Mood saved',
+            'data' => $mood
         ]);
     }
 

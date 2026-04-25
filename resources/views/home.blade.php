@@ -7,7 +7,7 @@
 <main class="dash-wrapper">
   <div class="dash-grid">
     <a class="dash-card dash-pet" href="{{ url('growth') }}">
-      <div class="dash-pet-img-wrap"><img id="dashPetImg" src="{{ asset('images/egg.png') }}" alt="Your butterfly" /></div>
+      <div class="dash-pet-img-wrap"><img id="dashPetImg" src="{{ asset('/images/egg.png') }}" alt="Your butterfly" /></div>
       <div class="dash-pet-right">
         <p class="dash-pet-stage" id="dashPetStage">Egg</p>
         <h3 id="dashPetMsg">Your journey is just beginning. 🥚</h3>
