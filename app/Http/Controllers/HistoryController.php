@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Chat;
+use App\Models\chat;
 use App\Models\Mood;
+use App\Models\ChatSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -50,7 +51,13 @@ class HistoryController extends Controller
             $preview = $this->generatePreview($messages);
             
             // Get session title (first user message or default)
-            $title = $this->getSessionTitle($messages);
+            $sessionModel = ChatSession::where('session_id', $sessionId)
+                ->where('user_id', $userId)
+                ->first();
+
+            $title = $sessionModel && $sessionModel->title
+                ? $sessionModel->title
+                : $this->getSessionTitle($messages);
             
             $sessions[] = [
                 'id' => $sessionId,
@@ -146,6 +153,17 @@ class HistoryController extends Controller
             'created_at' => now(),
             'updated_at' => now()
         ]);
+
+        // ⭐ CREATE SESSION IF NOT EXISTS
+        ChatSession::firstOrCreate(
+            [
+                'session_id' => $request->session_id,
+                'user_id' => Auth::id()
+            ],
+            [
+                'title' => substr($request->message, 0, 50)
+            ]
+        );
         
         // Update session title if this is the first user message
         if ($request->is_user && $request->is_user === true) {
@@ -172,20 +190,26 @@ class HistoryController extends Controller
      */
     public function renameSession(Request $request, $id)
     {
-        $request->validate([
-            'title' => 'required|string|max:255'
-        ]);
-        
-        // Since we don't have a sessions table, we'll store the title in the first message's metadata
-        // Or create a user_chat_sessions table
-        
-        // For now, we can store in a JSON field or create a separate table
-        // This is a placeholder - you may want to create a ChatSession model
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Session renamed successfully'
-        ]);
+        $data = $request->json()->all();
+
+        $name = $data['name'] ?? null;
+
+        if (!$name) {
+            return response()->json(['error' => 'Name missing'], 400);
+        }
+
+        $session = ChatSession::where('session_id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$session) {
+            return response()->json(['error' => 'Session not found'], 404);
+        }
+
+        $session->title = $name;
+        $session->save();
+
+        return response()->json(['success' => true]);
     }
     
     /**

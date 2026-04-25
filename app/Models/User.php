@@ -2,45 +2,67 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
-use Laravel\Fortify\TwoFactorAuthenticatable;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'profile_photo',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    public function chats()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(Chat::class);
     }
 
-    /**
-     * Get the user's initials
-     */
-    public function initials(): string
+    public function journals()
     {
-        return Str::of($this->name)
-            ->explode(' ')
-            ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
-            ->implode('');
+        return $this->hasMany(Journal::class);
+    }
+
+    public function moods()
+    {
+        return $this->hasMany(Mood::class);
+    }
+
+    public function breathingSessions()
+    {
+        return $this->hasMany(BreathingSession::class);
+    }
+
+    public function groundings()
+    {
+        return $this->hasMany(Grounding::class);
+    }
+
+    public function moodBoosters()
+    {
+        return $this->hasMany(MoodBooster::class);
+    }
+
+    public function miniTasks()
+    {
+        return $this->hasMany(MiniTask::class);
+    }
+
+    public function mindResets()
+    {
+        return $this->hasMany(MindReset::class);
     }
 }

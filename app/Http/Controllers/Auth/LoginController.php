@@ -17,17 +17,14 @@ class LoginController extends Controller
     // Handle login
     public function login(Request $request)
     {
-        // Validate input
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        // Attempt login
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-
-            return redirect()->intended('/chat'); // or dashboard
+            return redirect()->intended('/home');
         }
 
         return back()->withErrors([
