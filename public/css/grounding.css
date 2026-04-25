@@ -10,7 +10,7 @@
   --nav-bg:    #F1EDED;
 }
 
-/* ─── Body — background image (meadow) at 65% opacity ─── */
+/* ─── Body — background image (fixed path) ─── */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   min-height: 100vh;
@@ -23,7 +23,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: url('landing-butterfly-right.jpeg') center / cover no-repeat;
+  background: url('/images/landing-butterfly-right.jpeg') center / cover no-repeat;
   opacity: 0.65;  
   z-index: 0;
   pointer-events: none;
@@ -290,16 +290,12 @@ body > * { position: relative; z-index: 1; }
 .focus-overlay {
   position: fixed;
   inset: 0;
-
   background: rgba(0,0,0,0.3);
   backdrop-filter: blur(8px);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   z-index: 9999;
-
   opacity: 0;
   transition: 0.3s;
 }
@@ -318,9 +314,7 @@ body > * { position: relative; z-index: 1; }
   border-radius: 24px;
   text-align: center;
   max-width: 400px;
-
   box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-
   transform: scale(0.9);
   opacity: 0;
   transition: 0.3s;
@@ -331,16 +325,9 @@ body > * { position: relative; z-index: 1; }
   opacity: 1;
 }
 
-/* 🌿 Focus Card Next Button */
 .focus-card.fade-out {
   opacity: 0;
   transform: scale(0.95);
-  transition: 0.3s ease;
-}
-
-.focus-card.fade-in {
-  opacity: 1;
-  transform: scale(1);
   transition: 0.3s ease;
 }
 
@@ -359,21 +346,15 @@ body > * { position: relative; z-index: 1; }
   bottom: 40px;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
-
   background: rgba(255,255,255,0.9);
   color: #2d5c28;
-
   padding: 12px 20px;
   border-radius: 20px;
-
   font-size: 0.9rem;
   font-weight: 600;
-
   box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-
   opacity: 0;
   transition: 0.3s;
-
   z-index: 9999;
 }
 
@@ -395,11 +376,9 @@ body > * { position: relative; z-index: 1; }
   color: var(--forest);
   box-shadow: 0 4px 16px rgba(0,0,0,0.10);
   backdrop-filter: blur(10px);
-
   opacity: 0;
   transform: translateY(10px);
   pointer-events: none;
-
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
@@ -408,44 +387,19 @@ body > * { position: relative; z-index: 1; }
   transform: translateY(0);
 }
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.completion-text {
-  animation: fadeUp 0.6s ease;
-}
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .daily-popup {
   position: fixed;
   bottom: 40px;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
-
   background: rgba(255,255,255,0.9);
   backdrop-filter: blur(10px);
-
   padding: 12px 20px;
   border-radius: 25px;
-
   font-weight: 600;
   color: #2d5c28;
-
   opacity: 0;
   transition: 0.3s;
-
   z-index: 9999;
   pointer-events: none;
 }
@@ -470,39 +424,18 @@ body > * { position: relative; z-index: 1; }
   position: fixed;
   width: 10px;
   height: 10px;
-
   background: radial-gradient(circle, #ffffff 0%, #b6ffb0 60%, transparent 100%);
   border-radius: 50%;
-
-  box-shadow:
-    0 0 8px #b6ffb0,
-    0 0 16px #a5f19b,
-    0 0 24px #80ff8a;
-
+  box-shadow: 0 0 8px #b6ffb0, 0 0 16px #a5f19b, 0 0 24px #80ff8a;
   animation: sparkleFade 1.5s ease-out forwards;
   pointer-events: none;
   z-index: 9999;
 }
 
 @keyframes sparkleFade {
-  0% {
-    transform: scale(0.5);
-    opacity: 1;
-  }
-  70% {
-    transform: scale(1.5);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
-}
-
-/* ─── Responsive ─── */
-@media (max-width: 680px) {
-  .grounding-layout { flex-direction: column; }
-  .method-card { flex: none; width: 100%; }
+  0% { transform: scale(0.5); opacity: 1; }
+  70% { transform: scale(1.5); opacity: 0.8; }
+  100% { transform: scale(2); opacity: 0; }
 }
 
 /* 🌿 Butterfly Growth Toast */
@@ -510,21 +443,15 @@ body > * { position: relative; z-index: 1; }
   position: fixed;
   bottom: 25px;
   right: 25px;
-
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(10px);
-
   padding: 14px 18px;
   border-radius: 16px;
-
   box-shadow: 0 10px 25px rgba(0,0,0,0.12);
-
   max-width: 260px;
-
   opacity: 0;
   transform: translateY(20px);
   transition: all 0.3s ease;
-
   z-index: 9999;
 }
 
@@ -549,4 +476,10 @@ body > * { position: relative; z-index: 1; }
 .mood-toast-tip {
   font-size: 12px;
   color: #666;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 680px) {
+  .grounding-layout { flex-direction: column; }
+  .method-card { flex: none; width: 100%; }
 }

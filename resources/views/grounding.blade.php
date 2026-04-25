@@ -10,7 +10,7 @@
 <a href="{{ route('home') }}" class="btn-back">&#8592; Back to Home</a>
 
 <div class="grounding-container">
-    <img src="{{ asset('assets/breathing leaf.png') }}" alt="" class="butterfly-top-right">
+    <img src="{{ asset('images/breathing-leaf.png') }}" alt="" class="butterfly-top-right">
     <h1 class="grounding-title">Grounding Exercise</h1>
 
     <div class="grounding-layout">
@@ -51,4 +51,36 @@
         </div>
     </div>
 </div>
+
+<!-- Focus Mode Overlay -->
+<div id="focusOverlay" class="focus-overlay hidden">
+    <div class="focus-card">
+        <h2 id="focusTitle">5 Things you see</h2>
+        <p class="focus-guide">Take a moment. Gently look around you…</p>
+        <div id="focusInputs" class="step-inputs"></div>
+        <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
+            <button id="focusDoneBtn" class="btn-done-step">Done ✓</button>
+            <button id="focusNextBtn" class="btn-ghost">Next →</button>
+        </div>
+    </div>
+</div>
+
+<!-- Completion Message -->
+<div id="completion-msg" class="completion-msg">
+    🎉 Amazing! You've completed the grounding exercise! 🌿
+</div>
+
+<!-- Toast for butterfly growth -->
+<div class="mood-toast" id="moodToast">
+    <div class="mood-toast-body">
+        <p class="mood-toast-title" id="toastTitle"></p>
+        <p class="mood-toast-msg" id="toastMsg"></p>
+        <p class="mood-toast-tip" id="toastTip"></p>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/aire-data.js') }}"></script>
+<script src="{{ asset('js/grounding.js') }}"></script>
+@endpush

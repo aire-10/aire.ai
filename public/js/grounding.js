@@ -37,11 +37,33 @@ const groundingMessages = [
   "That’s a nice moment ✨"
 ];
 
+// ✅ FIXED: toggleStep function - this makes the dropdown work
 function toggleStep(index) {
-
   if (completedSteps.has(index)) return;
 
-  openFocusMode(index);
+  // Toggle the panel
+  const panel = document.getElementById(`panel-${index}`);
+  const arrow = document.getElementById(`arrow-${index}`);
+  
+  if (panel.classList.contains('open')) {
+    panel.classList.remove('open');
+    arrow.classList.remove('open');
+    arrow.textContent = '›';
+  } else {
+    // Close all other panels first
+    for (let i = 0; i < TOTAL_STEPS; i++) {
+      const otherPanel = document.getElementById(`panel-${i}`);
+      const otherArrow = document.getElementById(`arrow-${i}`);
+      if (otherPanel && otherPanel !== panel) {
+        otherPanel.classList.remove('open');
+        otherArrow?.classList.remove('open');
+        otherArrow.textContent = '›';
+      }
+    }
+    panel.classList.add('open');
+    arrow.classList.add('open');
+    arrow.textContent = '⌄';
+  }
 }
 
 function openFocusMode(index) {
@@ -356,8 +378,22 @@ function checkGroundingCompletion() {
   }
 }
 
+function showEncouragement() {
+  const popup = document.createElement("div");
+  popup.className = "grounding-feedback";
+  popup.textContent = "🌟 +0.5 XP! Your butterfly is growing! 🌟";
+  document.body.appendChild(popup);
+  setTimeout(() => popup.classList.add("show"), 10);
+  setTimeout(() => {
+    popup.classList.remove("show");
+    setTimeout(() => popup.remove(), 300);
+  }, 2500);
+}
+
 /* Popup for showing task growth progress (butterfly) */
 function showTaskGrowthToast() {
+  if (!window.AireData) return;
+  
   const stageKey = AireData.getStageKey();
   const streak = AireData.getStreak();
 
@@ -382,14 +418,13 @@ function showTaskGrowthToast() {
   const toast = document.getElementById("moodToast");
   if (!toast) return;
 
-  document.getElementById("toastTitle").textContent =
-    "🌿 Your butterfly is growing!";
-
-  document.getElementById("toastMsg").textContent =
-    `Stage: ${STAGE_LABELS[stageKey]} · Streak: ${streak} day${streak !== 1 ? "s" : ""}`;
-
-  document.getElementById("toastTip").textContent =
-    TASK_TIPS[stageKey];
+  const toastTitle = document.getElementById("toastTitle");
+  const toastMsg = document.getElementById("toastMsg");
+  const toastTip = document.getElementById("toastTip");
+  
+  if (toastTitle) toastTitle.textContent = "🌿 Your butterfly is growing!";
+  if (toastMsg) toastMsg.textContent = `Stage: ${STAGE_LABELS[stageKey]} · Streak: ${streak} day${streak !== 1 ? "s" : ""}`;
+  if (toastTip) toastTip.textContent = TASK_TIPS[stageKey] || "Keep going! 💪";
 
   toast.classList.add("show");
 
