@@ -4,6 +4,27 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/grounding.css') }}">
+    <style>
+        /* Background image fix */
+        body {
+            background-image: url('{{ asset("images/landing-butterfly-right.jpeg") }}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        
+        .grounding-container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(5px);
+            border-radius: 24px;
+            margin: 20px auto;
+            padding-bottom: 60px;
+        }
+        
+        .method-card, .step-btn, .step-panel {
+            background: rgba(255, 255, 255, 0.9);
+        }
+    </style>
 @endpush
 
 @section('content')
