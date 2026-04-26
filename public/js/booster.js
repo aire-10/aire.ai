@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const page = getCurrentPage();
 
   if (page === "moodlifting") {
-    await initBooster("moodlifting", ".thought-card", "completed");
+    await initBooster("moodlifting", ".ml-card", "completed");
   }
 
   if (page === "bodybooster") {
@@ -62,14 +62,36 @@ async function initBooster(type, selector, doneClass) {
 
     document.querySelectorAll(selector).forEach(card => {
 
+      /* =========================================
+        MOODLIFTING
+      ========================================= */
       if (type === "moodlifting") {
 
-        // ✅ CLEAR EVERYTHING
         card.classList.remove("completed");
         card.classList.remove("reflected");
 
         const tick = card.querySelector(".ml-tick");
         if (tick) tick.remove();
+      }
+
+      /* =========================================
+        BODYBOOSTER + MINITASK (THIS IS THE FIX)
+      ========================================= */
+      else {
+
+        card.classList.remove(doneClass);
+
+        const btn = card.querySelector(".task-start-btn");
+        const fill = card.querySelector(".task-bar-fill");
+
+        if (btn) {
+          btn.textContent = "Start";
+          btn.disabled = false;
+        }
+
+        if (fill) {
+          fill.style.width = "0%";
+        }
       }
 
     });
@@ -249,13 +271,14 @@ async function toggleTask(type, index, selector, doneClass) {
 
   cards.forEach((card, i) => {
 
+    /* =========================================
+       MOOD LIFTING (KEEP EXACT)
+    ========================================= */
     if (type === "moodlifting") {
 
       if (data.completed.includes(i)) {
 
-        // ✅ IMPORTANT: ADD THIS
         card.classList.add("completed");
-
         card.classList.add("reflected");
 
         if (!card.querySelector(".ml-tick")) {
@@ -267,15 +290,44 @@ async function toggleTask(type, index, selector, doneClass) {
 
       } else {
 
-        // ✅ IMPORTANT: REMOVE THIS
         card.classList.remove("completed");
-
         card.classList.remove("reflected");
 
         const tick = card.querySelector(".ml-tick");
         if (tick) tick.remove();
       }
+    }
 
+    /* =========================================
+       BODYBOOSTER + MINITASK (THIS IS THE FIX)
+    ========================================= */
+    else {
+
+      const btn = card.querySelector(".task-start-btn");
+      const fill = card.querySelector(".task-bar-fill");
+
+      if (data.completed.includes(i)) {
+
+        card.classList.add(doneClass);
+
+        if (fill) fill.style.width = "100%";
+
+        if (btn) {
+          btn.textContent = "Done ✓";
+          btn.disabled = true;
+        }
+
+      } else {
+
+        card.classList.remove(doneClass);
+
+        if (fill) fill.style.width = "0%";
+
+        if (btn) {
+          btn.textContent = "Start";
+          btn.disabled = false;
+        }
+      }
     }
 
   });
@@ -286,6 +338,17 @@ async function toggleTask(type, index, selector, doneClass) {
   updateProgress(selector, doneClass);
 
   await checkGrowth(type);
+
+  /* 🔥 FORCE LOCALSTORAGE (FIX) */
+  const today = new Date().toISOString().split("T")[0];
+
+  const doneCount = document.querySelectorAll(`${selector}.${doneClass}`).length;
+  const total = document.querySelectorAll(selector).length;
+
+  if (doneCount === total) {
+    localStorage.setItem(`${type}-achieved-${today}`, "true");
+  }
+
 }
 
 /* =========================================================
@@ -359,7 +422,10 @@ async function checkGrowth(type) {
   const res = await fetch(`/booster/check/${type}`);
   const data = await res.json();
 
+  const today = new Date().toISOString().split("T")[0];
+
   if (data.completed) {
+    localStorage.setItem(`${type}-achieved-${today}`, "true");
     showSparkles();
   }
 }

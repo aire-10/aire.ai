@@ -471,7 +471,7 @@ body > * { position: relative; z-index: 1; }
   gap: 18px;
 }
 
-.thought-card {
+.ml-card {
   background: var(--glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -489,13 +489,13 @@ body > * { position: relative; z-index: 1; }
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.thought-card:hover {
+.ml-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.12);
   background: rgba(210, 228, 210, 0.65);
 }
 
-.thought-card.reflected {
+.ml-card.reflected {
   background: rgba(210, 228, 210, 0.75);
   border-color: rgba(45, 92, 40, 0.4);
 }

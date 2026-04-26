@@ -1,4 +1,4 @@
-  document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", async function () {
 
     /* ── Daily Affirmations ──────────────────────── */
     const AFFIRMATIONS = [
@@ -35,12 +35,12 @@
 
     /* ── Pet card image mapping ────────────────────── */
     const STAGE_IMAGES = {
-      egg:         "egg.png",
-      pupa:        "pupa.png",
-      caterpillar: "caterpillar.png",
-      butterfly:   "adult_glow.png",
-      surviving:   "surviving.jpeg",
-      struggling:  "struggling.jpeg"
+      egg: "/images/egg.png",
+      pupa: "/images/pupa.png",
+      caterpillar: "/images/caterpillar.png",
+      butterfly: "/images/adult_glow.png",
+      surviving: "/images/surviving.jpeg",
+      struggling: "/images/struggling.jpeg"
     };
 
     const STAGE_LABELS = {
@@ -61,17 +61,29 @@
       struggling:  "One small step at a time. You've got this. 🌱"
     };
 
-    function refreshPetCard() {
-      const streak = AireData.getStreak();
-      const hasReachedButterfly = localStorage.getItem("hasReachedButterfly") === "true";
-      const consecutiveNeg = parseInt(localStorage.getItem("consecutiveNeg") || "0");
-      const recoveryStreak = parseInt(localStorage.getItem("recoveryStreak") || "0");
-      const daysTracked = AireData.getDaysTracked();
+    async function refreshPetCard() {
 
-      const stageKey = AireData.getStageKey()
-      const imgPath = STAGE_IMAGES[stageKey] || "egg.png";
-      const stageLabel = STAGE_LABELS[stageKey] || "Egg";
-      const message = STAGE_MESSAGES[stageKey] || "Your journey continues. 🌿";
+      const streak = await AireData.getStreak();
+      const daysTracked = await AireData.getDaysTracked();
+      const stageKey = await AireData.getStageKey();
+
+      const STAGE_LABELS = {
+        egg: "Egg",
+        pupa: "Pupa",
+        caterpillar: "Caterpillar",
+        butterfly: "Butterfly 🦋",
+        surviving: "Surviving",
+        struggling: "Struggling"
+      };
+
+      const STAGE_MESSAGES = {
+        egg: "Your journey is just beginning. 🥚",
+        pupa: "You're transforming, little one. 🐛",
+        caterpillar: "Every step forward matters. 🐾",
+        butterfly: "Spread your wings! You're glowing. 🦋",
+        surviving: "You're getting through this. 💚",
+        struggling: "One small step at a time. You've got this. 🌱"
+      };
 
       const imgEl = document.getElementById("dashPetImg");
       const stageEl = document.getElementById("dashPetStage");
@@ -79,14 +91,14 @@
       const streakEl = document.getElementById("dashPetStreak");
       const daysEl = document.getElementById("dashPetDays");
 
-      if (imgEl) imgEl.src = imgPath;
-      if (stageEl) stageEl.textContent = stageLabel;
-      if (msgEl) msgEl.textContent = message;
+      if (imgEl) imgEl.src = STAGE_IMAGES[stageKey];
+      if (stageEl) stageEl.textContent = STAGE_LABELS[stageKey];
+      if (msgEl) msgEl.textContent = STAGE_MESSAGES[stageKey];
       if (streakEl) streakEl.textContent = `🔥 ${streak} streak`;
       if (daysEl) daysEl.textContent = `📅 ${daysTracked} days`;
     }
 
-    refreshPetCard();
+    await refreshPetCard();
 
     /* ── Toast helpers ───────────────────────────── */
     const TIPS = {
@@ -109,12 +121,12 @@
 
     let toastTimer = null;
 
-    function showToast(mood) {
-      const streak = AireData.getStreak();
+    async function showToast(mood) {
+      const streak = await AireData.getStreak();
       const hasReachedButterfly = localStorage.getItem("hasReachedButterfly") === "true";
       const consecutiveNeg = parseInt(localStorage.getItem("consecutiveNeg") || "0");
       const recoveryStreak = parseInt(localStorage.getItem("recoveryStreak") || "0");
-      const stageKey = AireData.getStageKey();
+      const stageKey = await AireData.getStageKey();
       const stageLabel = STAGE_LABELS[stageKey] || "Egg";
       const imgPath = STAGE_IMAGES[stageKey] || "egg.png";
 
@@ -146,15 +158,20 @@
     const savedMsg = document.getElementById("dashMoodSaved");
 
     emojis.forEach(el => {
-      el.addEventListener("click", () => {
+      el.addEventListener("click", async () => {
         emojis.forEach(e => e.classList.remove("selected"));
         el.classList.add("selected");
 
         const mood = el.dataset.mood;
 
         // ✅ USE YOUR REAL SYSTEM
-        AireData.logMood(mood);
+        await AireData.logMood(mood);
 
+        window.dispatchEvent(new Event("aire:mood-logged"));
+        // 🔥 FORCE REFRESH UI STATE
+        await refreshPetCard();
+
+        // 🔥 UPDATE "Last Mood"
         const moodLabels = {
           joyful: "😄 Joyful",
           happy: "😊 Happy",
@@ -163,9 +180,9 @@
           tired: "😔 Tired"
         };
 
-        savedMsg.textContent = `${moodLabels[mood]} saved!`;
+        document.getElementById("dashMoodSaved").textContent =
+          `${moodLabels[mood]} saved!`;
 
-        refreshPetCard();
         showToast(mood);
 
         setTimeout(() => emojis.forEach(e => e.classList.remove("selected")), 800);
@@ -173,17 +190,23 @@
     });
 
     /* Show last logged mood if already checked in today */
-    const latest = AireData.getLatestEntry();
-    const today = new Date().toISOString().split("T")[0];
-    if (latest && latest.date === today) {
-      const moodLabels = {
-        joyful: "😄 Joyful",
-        happy: "😊 Happy",
-        neutral: "😐 Neutral",
-        sad: "😢 Sad",
-        tired: "😔 Tired"
-      };
-      savedMsg.textContent = `Last: ${moodLabels[latest.mood] || latest.mood}`;
-    }
+    (async () => {
+      const latest = await AireData.getLatestEntry();
+      const today = new Date().toISOString().split("T")[0];
+
+      if (latest && latest.date === today) {
+        const moodLabels = {
+          joyful: "😄 Joyful",
+          happy: "😊 Happy",
+          neutral: "😐 Neutral",
+          sad: "😢 Sad",
+          tired: "😔 Tired"
+        };
+
+        document.getElementById("dashMoodSaved").textContent =
+          `Last: ${moodLabels[latest.mood] || latest.mood}`;
+      }
+    })();
 
   });
+
