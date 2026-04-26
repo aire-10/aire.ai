@@ -45,8 +45,18 @@
                 </div>
                 <div class="bb-check-circle" id="circle-{{ $task['id'] }}"></div>
             </div>
+
+            <!-- ✅ ADD THIS PROGRESS BAR -->
+            <div class="task-progress">
+                <div class="task-bar">
+                    <div class="task-bar-fill"></div>
+                </div>
+            </div>
+
             <div class="bb-card-footer">
-                <button class="btn btn-green task-start-btn" data-duration="{{ $task['dur'] }}">Start</button>
+                <button class="btn btn-green task-start-btn" data-duration="{{ $task['dur'] }}">
+                    Start
+                </button>
             </div>
         </div>
         @endforeach
@@ -73,49 +83,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/progress.js') }}"></script>
-<script src="{{ asset('js/booster.js') }}"></script>
 <script src="{{ asset('js/aire-data.js') }}"></script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const keys = ["minitasks-progress", "bodybooster-progress", "mindreset-progress", "moodlifting-progress", "grounding-progress-inputs", "grounding-progress-steps"];
-    checkDailyReset(keys);
-    scheduleMidnightReset(keys);
-
-    initProgress({
-        selector: ".bb-card",
-        storageKey: "bodybooster-progress",
-        activeClass: "completed"
-    });
-
-    const resetBtn = document.querySelector(".reset-all-btn");
-    if (resetBtn) {
-        resetBtn.addEventListener("click", () => {
-            document.querySelectorAll(".bb-card").forEach(card => {
-                card.classList.remove("completed");
-                const btn = card.querySelector(".btn");
-                if (btn) { btn.disabled = false; btn.className = "btn btn-green task-start-btn"; btn.textContent = "Start"; }
-                const circle = card.querySelector(".bb-check-circle");
-                if (circle) { circle.classList.remove("done"); circle.textContent = ""; }
-                const leaf = card.querySelector(".bb-task-name span");
-                if (leaf) leaf.textContent = "🌿";
-            });
-            localStorage.removeItem("bodybooster-progress");
-            updateProgress();
-            rebindStartButtons();
-            showEncouragement("bodybooster");
-        });
-    }
-
-    function rebindStartButtons() {
-        document.querySelectorAll('.task-start-btn').forEach(btn => {
-            btn.onclick = () => {
-                const card = btn.closest('.bb-card');
-                const duration = parseInt(btn.getAttribute('data-duration')) || 10;
-                startTaskTimer(btn, card, duration);
-            };
-        });
-    }
-});
-</script>
+<script src="{{ asset('js/booster.js') }}"></script>
 @endpush

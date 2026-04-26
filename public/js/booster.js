@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const page = getCurrentPage();
 
   if (page === "moodlifting") {
-    await initBooster("moodlifting", ".thought-card", "crossed-off");
+    await initBooster("moodlifting", ".thought-card", "completed");
   }
 
   if (page === "bodybooster") {
@@ -60,20 +60,18 @@ async function initBooster(type, selector, doneClass) {
       }
     });
 
-    document.querySelectorAll(selector).forEach(c => {
-      c.classList.remove(doneClass);
+    document.querySelectorAll(selector).forEach(card => {
 
-      const btn = c.querySelector(".task-start-btn");
-      const bar = c.querySelector(".task-bar");
+      if (type === "moodlifting") {
 
-      if (btn) {
-        btn.textContent = "Start";
-        btn.disabled = false;
+        // ✅ CLEAR EVERYTHING
+        card.classList.remove("completed");
+        card.classList.remove("reflected");
+
+        const tick = card.querySelector(".ml-tick");
+        if (tick) tick.remove();
       }
 
-      if (bar) {
-        bar.style.width = "0%";
-      }
     });
 
     updateProgress(selector, doneClass);
@@ -91,24 +89,75 @@ async function loadProgress(type, selector, doneClass) {
   const res = await fetch(`/booster/progress/${type}`);
   const data = await res.json();
 
-  document.querySelectorAll(selector).forEach((card, index) => {
+  const cards = document.querySelectorAll(selector);
 
-    if (data.completed.includes(index)) {
-      card.classList.add(doneClass);
+  cards.forEach((card, index) => {
 
-      const btn = card.querySelector(".task-start-btn");
-      const bar = card.querySelector(".task-bar");
+    /* =========================================
+       MOOD LIFTING (DO NOT TOUCH - KEEP)
+    ========================================= */
+    if (type === "moodlifting") {
 
-      if (btn) {
-        btn.textContent = "Done ✓";
-        btn.disabled = true;
-      }
+      if (data.completed.includes(index)) {
 
-      if (bar) {
-        bar.style.width = "100%";
+        card.classList.add("completed");
+        card.classList.add("reflected");
+
+        if (!card.querySelector(".ml-tick")) {
+          const tick = document.createElement("span");
+          tick.className = "ml-tick";
+          tick.textContent = "✓";
+          card.appendChild(tick);
+        }
+
+      } else {
+
+        card.classList.remove("completed");
+        card.classList.remove("reflected");
+
+        const tick = card.querySelector(".ml-tick");
+        if (tick) tick.remove();
       }
     }
+
+    /* =========================================
+       BODYBOOSTER + MINITASK (THIS IS THE FIX)
+    ========================================= */
+    else {
+
+      if (data.completed.includes(index)) {
+
+        // ✅ restore completed state
+        card.classList.add(doneClass);
+
+        // OPTIONAL: restore progress bar visually
+        const fill = card.querySelector(".task-bar-fill");
+        if (fill) fill.style.width = "100%";
+
+        const btn = card.querySelector(".task-start-btn");
+        if (btn) {
+          btn.textContent = "Done ✓";
+          btn.disabled = true;
+        }
+
+      } else {
+
+        card.classList.remove(doneClass);
+
+        const fill = card.querySelector(".task-bar-fill");
+        if (fill) fill.style.width = "0%";
+
+        const btn = card.querySelector(".task-start-btn");
+        if (btn) {
+          btn.textContent = "Start";
+          btn.disabled = false;
+        }
+      }
+    }
+
   });
+
+  updateProgress(selector, doneClass);
 }
 
 
@@ -118,29 +167,26 @@ async function loadProgress(type, selector, doneClass) {
 function startTaskTimer(card, duration, type, selector, doneClass) {
 
   const btn = card.querySelector(".task-start-btn");
-
-  // ✅ SAFETY FIX (THIS IS THE KEY)
   if (!btn) return;
 
-  let bar = card.querySelector(".task-bar");
+  let fill = card.querySelector(".task-bar-fill");
 
-  if (!bar) {
-    bar = document.createElement("div");
-    bar.className = "task-bar";
-    bar.style.height = "6px";
-    bar.style.background = "#e0e0e0";
-    bar.style.borderRadius = "10px";
-    bar.style.margin = "10px 0";
-    bar.innerHTML = `<div class="task-bar-fill" style="height:100%; width:0%; background:#2e6b3f; border-radius:10px;"></div>`;
+  // ✅ FIX: CREATE IF NOT EXISTS
+  if (!fill) {
+    const bar = card.querySelector(".task-bar");
+    if (!bar) return;
 
-    const top = card.querySelector(".bb-card-top");
-    if (top) top.after(bar);
+    fill = document.createElement("div");
+    fill.className = "task-bar-fill";
+    fill.style.height = "100%";
+    fill.style.width = "0%";
+    fill.style.background = "#2e6b3f";
+    fill.style.borderRadius = "10px";
+
+    bar.appendChild(fill);
   }
 
-  const fill = bar.querySelector(".task-bar-fill");
-
   let time = duration;
-
   btn.disabled = true;
 
   const interval = setInterval(() => {
@@ -153,14 +199,12 @@ function startTaskTimer(card, duration, type, selector, doneClass) {
     btn.textContent = `${time}s`;
 
     if (time <= 0) {
-
       clearInterval(interval);
 
       btn.textContent = "Done ✓";
       card.classList.add(doneClass);
 
       const index = [...document.querySelectorAll(selector)].indexOf(card);
-
       toggleTask(type, index, selector, doneClass);
     }
 
@@ -201,19 +245,39 @@ async function toggleTask(type, index, selector, doneClass) {
 
   const data = await res.json();
 
-  document.querySelectorAll(selector).forEach((card, i) => {
+  const cards = document.querySelectorAll(selector);
 
-    const btn = card.querySelector(".task-start-btn");
+  cards.forEach((card, i) => {
 
-    if (btn) {
+    if (type === "moodlifting") {
+
       if (data.completed.includes(i)) {
-        btn.textContent = "Done ✓";
-        btn.disabled = true;
+
+        // ✅ IMPORTANT: ADD THIS
+        card.classList.add("completed");
+
+        card.classList.add("reflected");
+
+        if (!card.querySelector(".ml-tick")) {
+          const tick = document.createElement("span");
+          tick.className = "ml-tick";
+          tick.textContent = "✓";
+          card.appendChild(tick);
+        }
+
       } else {
-        btn.textContent = "Start";
-        btn.disabled = false;
+
+        // ✅ IMPORTANT: REMOVE THIS
+        card.classList.remove("completed");
+
+        card.classList.remove("reflected");
+
+        const tick = card.querySelector(".ml-tick");
+        if (tick) tick.remove();
       }
+
     }
+
   });
 
   showEncouragement(type);
@@ -223,7 +287,6 @@ async function toggleTask(type, index, selector, doneClass) {
 
   await checkGrowth(type);
 }
-
 
 /* =========================================================
    PROGRESS TEXT

@@ -1,74 +1,112 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
   const overlay = document.getElementById("focusOverlay");
 
   if (overlay) {
     overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) {
-        closeFocusMode();
-      }
+      if (e.target === overlay) closeFocusMode();
     });
   }
 
-  // 🔹 Load + restore
-  loadInputs();
-  loadSteps();
-  autoCompleteStepsFromInputs();
-  checkGroundingCompletion();
+  await loadFromDatabase();
 
-  // 🔹 Input listeners
-  document.querySelectorAll(".step-input").forEach(input => {
-    input.addEventListener("input", saveInputs);
+document.querySelectorAll(".step-input").forEach(input => {
+  input.addEventListener("input", () => {
+    saveToDatabase(currentStepIndex || 0, false);
   });
+}); 
 });
 
 let currentStepIndex = null;
-const STORAGE_KEY = "grounding-progress";
-const ACHIEVEMENT_KEY = "grounding-achieved";
-const POPUP_KEY = "grounding-popup";
 const TOTAL_STEPS = 5;
 const completedSteps = new Set();
 
-const groundingMessages = [
-  "Good… stay present 💚",
-  "You’re doing well 🌿",
-  "Keep going gently 🌱",
-  "You’re grounding yourself 🫶",
-  "That’s a nice moment ✨"
-];
+/* =========================
+   🔥 API FUNCTIONS
+========================= */
 
-// ✅ FIXED: toggleStep function - this makes the dropdown work
-function toggleStep(index) {
-  if (completedSteps.has(index)) return;
+async function loadFromDatabase() {
+  try {
+    const res = await fetch('/api/grounding/progress', {
+      headers: { "Accept": "application/json" }
+    });
 
-  // Toggle the panel
-  const panel = document.getElementById(`panel-${index}`);
-  const arrow = document.getElementById(`arrow-${index}`);
-  
-  if (panel.classList.contains('open')) {
-    panel.classList.remove('open');
-    arrow.classList.remove('open');
-    arrow.textContent = '›';
-  } else {
-    // Close all other panels first
-    for (let i = 0; i < TOTAL_STEPS; i++) {
-      const otherPanel = document.getElementById(`panel-${i}`);
-      const otherArrow = document.getElementById(`arrow-${i}`);
-      if (otherPanel && otherPanel !== panel) {
-        otherPanel.classList.remove('open');
-        otherArrow?.classList.remove('open');
-        otherArrow.textContent = '›';
-      }
-    }
-    panel.classList.add('open');
-    arrow.classList.add('open');
-    arrow.textContent = '⌄';
+    const data = await res.json();
+
+    if (!data || !data.has_progress) return;
+
+    // ✅ RESET FIRST
+    completedSteps.clear();
+
+    // ✅ RESTORE STEPS
+    (data.completed_steps || []).forEach(i => {
+      completedSteps.add(i);
+      markStepDoneUI(i);
+    });
+
+    // ✅ RESTORE INPUTS PROPERLY
+    const inputs = data.step_inputs || {};
+
+    Object.keys(inputs).forEach(stepIndex => {
+      const values = inputs[stepIndex];
+
+      values.forEach((val, i) => {
+        const input = document.querySelectorAll(`#inputs-${stepIndex} .step-input`)[i];
+        if (input) input.value = val;
+      });
+    });
+
+    updateProgress();
+
+  } catch (err) {
+    console.error("❌ load grounding error:", err);
   }
 }
+
+async function saveToDatabase(stepIndex, isCompleted = false) {
+  try {
+
+    const payload = {
+      step_index: stepIndex ?? 0,
+      inputs: getAllInputs(),
+      completed_steps: Array.from(completedSteps),
+      is_completed: isCompleted
+    };
+
+    console.log("🔥 SENDING:", payload);
+
+    const res = await fetch('/api/grounding/progress', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      console.error("❌ SAVE FAILED:", text);
+      return;
+    }
+
+    console.log("✅ SAVED:", text);
+
+  } catch (err) {
+    console.error("❌ save grounding error:", err);
+  }
+}
+
+/* =========================
+   🎯 FOCUS MODE (RESTORED)
+========================= */
 
 function openFocusMode(index) {
 
   currentStepIndex = index;
+
   const overlay = document.getElementById("focusOverlay");
   const title = document.getElementById("focusTitle");
   const guide = document.querySelector(".focus-guide");
@@ -82,353 +120,130 @@ function openFocusMode(index) {
     "1 Thing you like"
   ];
 
-  const guidanceTexts = [
-  "Take a moment. Gently look around you…",
-  "Take a moment. Gently feel around you…",
-  "Take a moment. Listen closely…",
-  "Take a moment. Notice the scents around you…",
-  "Take a moment. Think of something you appreciate…"
-];
+  const guides = [
+    "Look around you gently…",
+    "Notice your body…",
+    "Listen carefully…",
+    "Notice scents…",
+    "Think of something you like…"
+  ];
 
   title.textContent = labels[index];
-  guide.textContent = guidanceTexts[index];
+  guide.textContent = guides[index];
 
-  // clone inputs from original panel
-  const originalInputs = document.querySelector(`#inputs-${index}`).innerHTML;
-  inputsContainer.innerHTML = originalInputs;
+  inputsContainer.innerHTML =
+    document.querySelector(`#inputs-${index}`).innerHTML;
 
   overlay.classList.remove("hidden");
 
-  setTimeout(() => {
-    overlay.classList.add("show");
-  }, 10);
+  setTimeout(() => overlay.classList.add("show"), 10);
 
-  // DONE BUTTON
   document.getElementById("focusDoneBtn").onclick = () => {
     doneStep(new Event("click"), index);
     closeFocusMode();
   };
-  // NEXT BUTTON
-  document.getElementById("focusNextBtn").onclick = () => {
-    goToNextStep();
-  };
+
+  document.getElementById("focusNextBtn").onclick = goToNextStep;
 }
 
 function closeFocusMode() {
   const overlay = document.getElementById("focusOverlay");
-
   overlay.classList.remove("show");
-
-  setTimeout(() => {
-    overlay.classList.add("hidden");
-  }, 300);
-}
-
-function showGroundingFeedback() {
-  const msg = groundingMessages[Math.floor(Math.random() * groundingMessages.length)];
-
-  const popup = document.createElement("div");
-  popup.className = "grounding-feedback";
-  popup.textContent = msg;
-
-  document.body.appendChild(popup);
-
-  setTimeout(() => popup.classList.add("show"), 10);
-
-  setTimeout(() => {
-    popup.classList.remove("show");
-    setTimeout(() => popup.remove(), 300);
-  }, 2000);
-}
-
-function doneStep(event, index) {
-  if (event) event.stopPropagation();
-
-  completedSteps.add(index);
-
-  // ✅ SAVE steps
-  saveSteps();
-
-  // Mark as done
-  const stepBtn = document.getElementById(`step-${index}`);
-
-  if (stepBtn) {
-    stepBtn.classList.add('done');
-
-    // Change icon to checkmark
-    const icon = stepBtn.querySelector('.step-icon');
-    if (icon) icon.textContent = '✓';
-  }
-
-  // Close panel
-  const panel = document.getElementById(`panel-${index}`);
-  const arrow = document.getElementById(`arrow-${index}`);
-  if (panel) panel.classList.remove('open');
-  if (arrow) {
-    arrow.classList.remove('open');
-    arrow.textContent = '✓';
-    arrow.style.color = '#2d5c28';
-  }
-
-  // Update progress
-  updateProgress();
-
-  if (completedSteps.size === TOTAL_STEPS) {
-    closeFocusMode(); 
-  } else {
-    showGroundingFeedback();
-  }
-
-  checkGroundingCompletion();
+  setTimeout(() => overlay.classList.add("hidden"), 300);
 }
 
 function goToNextStep() {
 
   doneStep(new Event("click"), currentStepIndex);
 
-  // ✅ HANDLE FINAL STEP HERE
   if (completedSteps.size === TOTAL_STEPS) {
     closeFocusMode();
-
-    setTimeout(() => {
-    }, 300);
-
     return;
   }
 
-  const card = document.querySelector(".focus-card");
+  let next = currentStepIndex + 1;
 
-  card.classList.add("fade-out");
+  while (completedSteps.has(next) && next < TOTAL_STEPS) {
+    next++;
+  }
 
-  setTimeout(() => {
-    card.classList.remove("fade-out");
+  openFocusMode(next);
+}
 
-    let next = currentStepIndex + 1;
+/* =========================
+   UI LOGIC
+========================= */
 
-    while (completedSteps.has(next) && next < TOTAL_STEPS) {
-      next++;
-    }
+function toggleStep(index) {
+  if (completedSteps.has(index)) return;
 
-    openFocusMode(next);
+  // 🔥 THIS WAS MISSING → open focus mode
+  openFocusMode(index);
+}
 
-  }, 300);
+function doneStep(e, index) {
+  if (e) e.stopPropagation();
+
+  completedSteps.add(index);
+
+  markStepDoneUI(index);
+
+  updateProgress();
+
+  const isCompleted = completedSteps.size === TOTAL_STEPS;
+
+  saveToDatabase(index, isCompleted);
+
+  if (isCompleted) showCompletion();
+}
+
+function markStepDoneUI(index) {
+  const step = document.getElementById(`step-${index}`);
+  if (step) {
+    step.classList.add("done");
+    const icon = step.querySelector(".step-icon");
+    if (icon) icon.textContent = "✓";
+  }
+
+  const arrow = document.getElementById(`arrow-${index}`);
+  if (arrow) {
+    arrow.textContent = "✓";
+    arrow.style.color = "#2d5c28";
+  }
+}
+
+function getAllInputs() {
+  const result = {};
+
+  for (let i = 0; i < TOTAL_STEPS; i++) {
+    const inputs = document.querySelectorAll(`#inputs-${i} .step-input`);
+
+    const values = Array.from(inputs)
+      .map(i => i.value.trim())
+      .filter(v => v !== ""); // 🔥 REMOVE EMPTY VALUES
+
+    result[i] = values;
+  }
+
+  return result;
 }
 
 function updateProgress() {
-  const done  = completedSteps.size;
-  const pct   = (done / TOTAL_STEPS) * 100;
+  const done = completedSteps.size;
+  const pct = (done / TOTAL_STEPS) * 100;
 
   document.getElementById('progress-fill').style.width = `${pct}%`;
-  document.getElementById('progress-label').textContent = `${done} / ${TOTAL_STEPS} complete`;
+  document.getElementById('progress-label').textContent =
+    `${done} / ${TOTAL_STEPS} complete`;
+}
 
+function showCompletion() {
   const msg = document.getElementById('completion-msg');
+  if (!msg) return;
 
-  if (done === TOTAL_STEPS && msg && !msg.classList.contains('visible')) {
-
-    const today = new Date().toISOString().split("T")[0]
-    const lastShown = localStorage.getItem(POPUP_KEY);
-
-    if (lastShown !== today) {
-
-      msg.classList.add('visible');
-
-      showSparkles();
-      
-      // 🌿 Butterfly growth toast (ONLY after full completion)
-      setTimeout(() => {
-        showTaskGrowthToast();
-      }, 400);      
-
-      setTimeout(() => {
-        msg.classList.remove('visible');
-      }, 3000);
-
-      // ✅ SAVE AFTER showing
-      localStorage.setItem(POPUP_KEY, today);
-    }
-  }
-}
-
-function saveInputs() {
-  const allInputs = document.querySelectorAll(".step-input");
-
-  const values = Array.from(allInputs).map(input => input.value);
-
-  localStorage.setItem(STORAGE_KEY + "-inputs", JSON.stringify(values));
-}
-
-function loadInputs() {
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY + "-inputs")) || [];
-
-  const allInputs = document.querySelectorAll(".step-input");
-
-  allInputs.forEach((input, index) => {
-    if (saved[index]) {
-      input.value = saved[index];
-    }
-  });
-}
-
-function autoCompleteStepsFromInputs() {
-  for (let i = 0; i < TOTAL_STEPS; i++) {
-    const inputs = document.querySelectorAll(`#inputs-${i} .step-input`);
-    
-    const allFilled = Array.from(inputs).every(input => input.value.trim() !== "");
-
-    if (allFilled && !completedSteps.has(i)) {
-      completedSteps.add(i);
-
-      const step = document.getElementById(`step-${i}`);
-      if (step) {
-        step.classList.add("done");
-        const icon = step.querySelector(".step-icon");
-        if (icon) icon.textContent = "✓";
-      }
-
-      const arrow = document.getElementById(`arrow-${i}`);
-      if (arrow) {
-        arrow.textContent = "✓";
-        arrow.style.color = "#2d5c28";
-
-      }
-    }
-  }
-
-  updateProgress();
-}
-
-function saveSteps() {
-  const stepsArray = Array.from(completedSteps);
-  localStorage.setItem(STORAGE_KEY + "-steps", JSON.stringify(stepsArray));
-}
-
-function loadSteps() {
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY + "-steps")) || [];
-
-  saved.forEach(index => {
-    completedSteps.add(index);
-
-    // Restore UI
-    const step = document.getElementById(`step-${index}`);
-    if (step) {
-      step.classList.add("done");
-
-      const icon = step.querySelector(".step-icon");
-      if (icon) icon.textContent = "✓";
-    }
-
-    const arrow = document.getElementById(`arrow-${index}`);
-    if (arrow) {
-      arrow.textContent = "✓";
-      arrow.style.color = "#2d5c28";
-
-    }
-  }
-);
-
-  updateProgress();
-}
-
-function showSparkles() {
-  for (let i = 0; i < 25; i++) { // more sparkles
-    const sparkle = document.createElement("div");
-    sparkle.className = "sparkle";
-
-    // 🌟 RANDOM POSITION ACROSS SCREEN
-    sparkle.style.left = Math.random() * window.innerWidth + "px";
-    sparkle.style.top  = Math.random() * window.innerHeight + "px";
-
-    document.body.appendChild(sparkle);
-
-    setTimeout(() => sparkle.remove(), 1200);
-  }
-}
-
-function checkGroundingCompletion() {
-  if (completedSteps.size === TOTAL_STEPS) {
-
-    const todayStr = new Date().toISOString().split("T")[0]
-    const key = ACHIEVEMENT_KEY;
-
-    const lastCompleted = localStorage.getItem(key);
-
-    if (lastCompleted !== todayStr) {
-
-      // ⭐ GIVE XP (safe check)
-      if (window.AireData && typeof AireData.addXP === "function") {
-        AireData.addXP(0.5);
-      }
-
-      if (typeof renderHero === "function") {
-        renderHero([]);
-      }
-      if (typeof renderActions === "function") {
-        renderActions();
-      }
-
-      // ✅ SAVE ACHIEVEMENT
-      localStorage.setItem(key, todayStr);
-      if (typeof renderActions === "function") {
-        renderActions();
-      }
-
-      // 🎉 Feedback
-      showEncouragement("groundingMessages");
-    }
-  }
-}
-
-function showEncouragement() {
-  const popup = document.createElement("div");
-  popup.className = "grounding-feedback";
-  popup.textContent = "🌟 +0.5 XP! Your butterfly is growing! 🌟";
-  document.body.appendChild(popup);
-  setTimeout(() => popup.classList.add("show"), 10);
-  setTimeout(() => {
-    popup.classList.remove("show");
-    setTimeout(() => popup.remove(), 300);
-  }, 2500);
-}
-
-/* Popup for showing task growth progress (butterfly) */
-function showTaskGrowthToast() {
-  if (!window.AireData) return;
-  
-  const stageKey = AireData.getStageKey();
-  const streak = AireData.getStreak();
-
-  const STAGE_LABELS = {
-    egg: "Egg",
-    pupa: "Pupa",
-    caterpillar: "Caterpillar",
-    butterfly: "Butterfly 🦋",
-    surviving: "Surviving",
-    struggling: "Struggling"
-  };
-
-  const TASK_TIPS = {
-    egg: "Small actions like this help your butterfly grow 🌱",
-    pupa: "You're building momentum — keep going 💚",
-    caterpillar: "Your efforts are adding up 🐛",
-    butterfly: "You're thriving — keep it up 🦋",
-    surviving: "These actions support your recovery 💚",
-    struggling: "Even small steps matter 🌱"
-  };
-
-  const toast = document.getElementById("moodToast");
-  if (!toast) return;
-
-  const toastTitle = document.getElementById("toastTitle");
-  const toastMsg = document.getElementById("toastMsg");
-  const toastTip = document.getElementById("toastTip");
-  
-  if (toastTitle) toastTitle.textContent = "🌿 Your butterfly is growing!";
-  if (toastMsg) toastMsg.textContent = `Stage: ${STAGE_LABELS[stageKey]} · Streak: ${streak} day${streak !== 1 ? "s" : ""}`;
-  if (toastTip) toastTip.textContent = TASK_TIPS[stageKey] || "Keep going! 💪";
-
-  toast.classList.add("show");
+  msg.classList.add('visible');
 
   setTimeout(() => {
-    toast.classList.remove("show");
-  }, 5000);
+    msg.classList.remove('visible');
+  }, 3000);
 }

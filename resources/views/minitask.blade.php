@@ -38,7 +38,9 @@
                 <span class="task-text">Take 3 slow breaths</span>
             </div>
             <div class="task-progress">
-            <div class="task-bar"></div>
+            <div class="task-bar">
+            <div class="task-bar-fill"></div>
+            </div>
             </div>
 
             <button class="btn btn-green task-start-btn">Start</button>
@@ -50,7 +52,9 @@
                 <span class="task-text">Roll your shoulders back 10x</span>
             </div>
             <div class="task-progress">
-            <div class="task-bar"></div>
+            <div class="task-bar">
+            <div class="task-bar-fill"></div>
+            </div>
             </div>
 
             <button class="btn btn-green task-start-btn">Start</button>
@@ -62,7 +66,9 @@
                 <span class="task-text">Raise & relax your eyebrows 5x</span>
             </div>
             <div class="task-progress">
-            <div class="task-bar"></div>
+            <div class="task-bar">
+            <div class="task-bar-fill"></div>
+            </div>
             </div>
 
             <button class="btn btn-green task-start-btn">Start</button>
@@ -74,7 +80,9 @@
                 <span class="task-text">Blink slowly 5x</span>
             </div>
             <div class="task-progress">
-            <div class="task-bar"></div>
+            <div class="task-bar">
+            <div class="task-bar-fill"></div>
+            </div>
             </div>
 
             <button class="btn btn-green task-start-btn">Start</button>
@@ -94,7 +102,9 @@
                 <span class="task-text">Stretch your neck gently</span>
             </div>
             <div class="task-progress">
-            <div class="task-bar"></div>
+            <div class="task-bar">
+            <div class="task-bar-fill"></div>
+            </div>
             </div>
 
             <button class="btn btn-green task-start-btn">Start</button>
@@ -106,7 +116,9 @@
                 <span class="task-text">Sit up straight for 10 seconds</span>
             </div>
             <div class="task-progress">
-            <div class="task-bar"></div>
+            <div class="task-bar">
+            <div class="task-bar-fill"></div>
+            </div>
             </div>
 
             <button class="btn btn-green task-start-btn">Start</button>
@@ -118,7 +130,9 @@
                 <span class="task-text">Force a laugh for 30 seconds</span>
             </div>
             <div class="task-progress">
-            <div class="task-bar"></div>
+            <div class="task-bar">
+            <div class="task-bar-fill"></div>
+            </div>
             </div>
 
             <button class="btn btn-green task-start-btn">Start</button>
@@ -130,7 +144,9 @@
                 <span class="task-text">Force a smile for 20 seconds</span>
             </div>
             <div class="task-progress">
-            <div class="task-bar"></div>
+            <div class="task-bar">
+            <div class="task-bar-fill"></div>
+            </div>
             </div>
 
             <button class="btn btn-green task-start-btn">Start</button>
@@ -140,9 +156,9 @@
 </div>
 
 <div class="cross-off-footer">
-  <button class="btn-outline cross-off-reset-btn">
+    <button class="btn-outline reset-all-btn">
     Reset All Items
-  </button>
+    </button>
 </div>
 
 </div>

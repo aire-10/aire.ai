@@ -16,10 +16,14 @@
     <div class="ml-grid">
         @php $thoughts = ['Recall a happy memory','Think of your favourite food',"You're still here.<br>That's enough.","What's one thing you did okay today?",'Tell yourself: "This feeling is okay, and it will pass."',"If you're tired, what's one tiny rest you can take?"]; @endphp
         @foreach($thoughts as $thought)
-        <div class="thought-card cross-off-item"><span class="cross-off-text">{!! $thought !!}</span></div>
+        <div class="thought-card"><span class="cross-off-text">{!! $thought !!}</span></div>
         @endforeach
     </div>
-    <div class="cross-off-footer"><button class="btn-outline cross-off-reset-btn">Reset All Thoughts</button></div>
+    <div class="cross-off-footer">
+        <button class="btn-outline reset-all-btn">
+        Reset All Thoughts
+        </button>
+    </div>
 </div>
 <img src="{{ asset('images/logo.png') }}" alt="Butterfly" class="ml-butterfly">
 <div class="mood-toast" id="moodToast"><div class="mood-toast-body"><p class="mood-toast-title" id="toastTitle"></p><p class="mood-toast-msg" id="toastMsg"></p><p class="mood-toast-tip" id="toastTip"></p></div></div>
