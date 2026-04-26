@@ -4390,3 +4390,47 @@ header{
 .book-tab:active {
   transform: scale(0.98);
 }
+
+/* ================================================================
+   HISTORY PAGE DROPDOWN POSITION FIX
+   ================================================================ */
+
+.history-row-actions {
+  position: relative;
+}
+
+.history-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  min-width: 100px;
+  z-index: 100;
+  display: none;
+  margin-top: 5px;
+  overflow: hidden;
+}
+
+.history-menu.is-open {
+  display: block;
+}
+
+.history-menu button {
+  width: 100%;
+  padding: 8px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.history-menu button:hover {
+  background: #f5f5f5;
+}
+
+.history-menu .danger {
+  color: #c0392b;
+}

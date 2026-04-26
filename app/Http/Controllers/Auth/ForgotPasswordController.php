@@ -15,7 +15,7 @@ class ForgotPasswordController extends Controller
         return view('layouts.auth.forgotpassword');
     }
 
-    // Handle reset
+    // Handle password reset
     public function reset(Request $request)
     {
         $data = $request->validate([
@@ -28,13 +28,13 @@ class ForgotPasswordController extends Controller
         if (!$user) {
             return back()->withErrors([
                 'email' => 'Email not found.'
-            ]);
+            ])->onlyInput('email');
         }
 
         $user->update([
             'password' => Hash::make($data['password'])
         ]);
 
-        return redirect('/login')->with('status', 'Password updated successfully!');
+        return redirect('/login')->with('status', 'Password updated successfully! You can now login with your new password.');
     }
 }
