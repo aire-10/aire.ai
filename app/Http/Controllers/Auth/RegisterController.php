@@ -44,6 +44,8 @@ class RegisterController extends Controller
         }
 
         // Fallback - still redirect to home
+        
+        // ✅ Make sure this redirects to /home
         return redirect('/home');
     }
 }

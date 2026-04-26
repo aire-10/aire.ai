@@ -2585,19 +2585,19 @@ nav{
 }
 
 .journal-textarea {
-    width: 100%  !important;
+    width: 100% ;
     flex: 1;
     min-height: 200px;
-    border: none !important;
+    border: none;
     border-bottom: 2px solid rgba(76, 122, 96, 0.2);
-    background: transparent !important;
+    background: transparent;
     resize: none;
     font-size: 0.92rem;
     font-family: inherit;
     color: #333;
-    line-height: 1.85  !important;
-    outline: none !important;
-    padding: 21px 3px  !important;
+    line-height: 1.85 ;
+    outline: none;
+    padding: 21px 3px ;
     transition: border-color 0.2s;
 }
 
@@ -2680,7 +2680,7 @@ textarea::placeholder{
 
 .book-page-right {
   position: relative;
-  transform-origin: left center !important;
+  transform-origin: left center;
   transform-style: preserve-3d;
   transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
@@ -2703,9 +2703,9 @@ textarea::placeholder{
   box-shadow: inset -10px 0 20px rgba(0,0,0,0.05);
 }
 
-.turn-forward { transform: rotateY(-180deg) !important; }
-.prep-back { transform: rotateY(-180deg) !important; transition: none !important; }
-.turn-back { transform: rotateY(0deg) !important; transition: transform 0.8s cubic-bezier(0.15, 0.8, 0.4, 1) !important; }
+.turn-forward { transform: rotateY(-180deg); }
+.prep-back { transform: rotateY(-180deg); transition: none; }
+.turn-back { transform: rotateY(0deg); transition: transform 0.8s cubic-bezier(0.15, 0.8, 0.4, 1); }
 
 .book-page-right .front {
     position: absolute;
@@ -2716,17 +2716,17 @@ textarea::placeholder{
 }
 
 .flip-forward {
-    transform: rotateY(-180deg) !important;
+    transform: rotateY(-180deg);
 }
 
 .prep-backward {
-    transform: rotateY(-180deg) !important;
-    transition: none !important;
+    transform: rotateY(-180deg);
+    transition: none;
 }
 
 .animate-backward {
-    transform: rotateY(0deg) !important;
-    transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    transform: rotateY(0deg);
+    transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .book-open::after {
@@ -2753,7 +2753,7 @@ textarea::placeholder{
 }
 
 .unflip-to-right {
-    transform: rotateY(0deg) !important;
+    transform: rotateY(0deg);
     transition: transform 0.9s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
@@ -3161,7 +3161,7 @@ body {
 }
 
 .entry-card {
-  margin-bottom: 15px !important;
+  margin-bottom: 15px;
 }
 
 .delete-btn{
@@ -3427,7 +3427,7 @@ header{
 .day-streak { font-size: 0.82rem; font-weight: 700; color: rgba(0,0,0,0.5); white-space: nowrap; }
 
 .nav-dropdown-menu a:hover {
-  background: #f5f5f5 !important;
+  background: #f5f5f5;
   border-radius: 8px;
 }
 
@@ -4088,24 +4088,24 @@ header{
 
 .book-page-right {
     position: relative;
-    transform-origin: left center !important;
+    transform-origin: left center;
     transform-style: preserve-3d;
     transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
     z-index: 10;
 }
 
 .flip-forward {
-    transform: rotateY(-180deg) !important;
+    transform: rotateY(-180deg);
 }
 
 .prep-backward {
-    transform: rotateY(-180deg) !important;
-    transition: none !important;
+    transform: rotateY(-180deg);
+    transition: none;
 }
 
 .animate-backward {
-    transform: rotateY(0deg) !important;
-    transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    transform: rotateY(0deg);
+    transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .book-page-right::after {
     content: "";
@@ -4324,12 +4324,12 @@ header{
 
 /* Forward flip animation (going to next page) */
 .book-page-right.flip-forward {
-  transform: rotateY(-180deg) !important;
+  transform: rotateY(-180deg);
 }
 
 /* Backward flip animation (going back) */
 .book-page-right.flip-backward {
-  transform: rotateY(0deg) !important;
+  transform: rotateY(0deg);
   transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
@@ -4389,4 +4389,48 @@ header{
 
 .book-tab:active {
   transform: scale(0.98);
+}
+
+/* ================================================================
+   HISTORY PAGE DROPDOWN POSITION FIX
+   ================================================================ */
+
+.history-row-actions {
+  position: relative;
+}
+
+.history-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  min-width: 100px;
+  z-index: 100;
+  display: none;
+  margin-top: 5px;
+  overflow: hidden;
+}
+
+.history-menu.is-open {
+  display: block;
+}
+
+.history-menu button {
+  width: 100%;
+  padding: 8px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.history-menu button:hover {
+  background: #f5f5f5;
+}
+
+.history-menu .danger {
+  color: #c0392b;
 }
