@@ -238,10 +238,18 @@ function updateProgress() {
 }
 
 function showCompletion() {
+
   const msg = document.getElementById('completion-msg');
   if (!msg) return;
 
   msg.classList.add('visible');
+
+  const today = new Date().toISOString().split("T")[0];
+
+  // ✅ CONNECT TO GROWTH SYSTEM (OPTION B)
+  if (!localStorage.getItem(`grounding-achieved-${today}`)) {
+    localStorage.setItem(`grounding-achieved-${today}`, "true");
+  }
 
   setTimeout(() => {
     msg.classList.remove('visible');

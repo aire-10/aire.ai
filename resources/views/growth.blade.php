@@ -4,7 +4,6 @@
 @section('body-class', 'dash-body')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/growth.css') }}">
 <style>
     .pet-page { max-width: 1000px; margin: 0 auto; padding: 20px; font-family: 'Inter', sans-serif; }
     .hero-container { background: #d3e9d3; border-radius: 20px; padding: 40px; text-align: center; margin-bottom: 30px; position: relative; }
@@ -42,21 +41,9 @@
 
 @push('head-scripts')
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="{{ asset('js/aire-data.js') }}"></script> 
   <script src="{{ asset('js/growth.js') }}" defer></script>
 @endpush
-
-<script>
-    // Unified Data Object
-    window.AireData = {
-        getMoodLog: () => @json($moodLog),
-        getStreak: () => {{ $streak }},
-        getDaysTracked: () => {{ $daysTracked }},
-        getTodayCheckInCount: () => {{ $todayCheckIns }},
-        getLatestMood: () => @json($latestMood),
-        MOOD_META: @json($moodMeta),
-        POSITIVE: ['joyful', 'happy', 'content']
-    };
-</script>
 
 @section('content')
 <main class="pet-page">
@@ -89,82 +76,68 @@
 
               @php $today = now()->toDateString(); @endphp
 
-              {{-- Mood --}}
-              <div class="task-item">
-                  <div class="check-circle">
-                      {{ $completedActions['mood'] ? '✓' : '' }}
-                  </div>
-                  <div>
-                      <strong>Log your mood today</strong>
-                      <small>+1 growth point</small>
-                  </div>
-              </div>
+                {{-- Mood --}}
+                <div class="task-item">
+                    <div class="check-circle" id="checkMood"></div>
+                    <div>
+                        <strong>Log your mood today</strong>
+                        <small>+1 growth point</small>
+                    </div>
+                </div>
 
-              {{-- Positive Mood --}}
-              <div class="task-item">
-                  <div class="check-circle">
-                      {{ $latestMood && in_array($latestMood, ['joyful','happy']) ? '✓' : '' }}
-                  </div>
-                  <div>
-                      <strong>Log a Joyful or Happy mood</strong>
-                      <small>+1 bonus point</small>
-                  </div>
-              </div>
+                {{-- Positive Mood --}}
+                <div class="task-item">
+                    <div class="check-circle" id="checkPositive"></div>
+                    <div>
+                        <strong>Log a Joyful or Happy mood</strong>
+                        <small>+1 bonus point</small>
+                    </div>
+                </div>
 
-              {{-- Body Booster --}}
-              <div class="task-item">
-                  <div class="check-circle">
-                      {{ $completedActions['bodybooster'] ? '✓' : '' }}
-                  </div>
-                  <div>
-                      <strong>Complete Body Booster</strong>
-                      <small>+0.5 growth points 💪</small>
-                  </div>
-              </div>
+                {{-- Body Booster --}}
+                <div class="task-item">
+                    <div class="check-circle" id="checkBodyBooster"></div>
+                    <div>
+                        <strong>Complete Body Booster</strong>
+                        <small>+0.5 growth points 💪</small>
+                    </div>
+                </div>
 
-              {{-- Mini Tasks --}}
-              <div class="task-item">
-                  <div class="check-circle">
-                      {{ $completedActions['minitask'] ? '✓' : '' }}
-                  </div>
-                  <div>
-                      <strong>Complete Mini Tasks</strong>
-                      <small>+0.5 growth points 🌱</small>
-                  </div>
-              </div>
+                {{-- Mini Tasks --}}
+                <div class="task-item">
+                    <div class="check-circle" id="checkMiniTask"></div>
+                    <div>
+                        <strong>Complete Mini Tasks</strong>
+                        <small>+0.5 growth points 🌱</small>
+                    </div>
+                </div>
 
-              {{-- Mind Reset --}}
-              <div class="task-item">
-                  <div class="check-circle">
-                      {{ $completedActions['mindreset'] ? '✓' : '' }}
-                  </div>
-                  <div>
-                      <strong>Complete Mind Reset</strong>
-                      <small>+0.5 growth points 🧠</small>
-                  </div>
-              </div>
+                {{-- Mind Reset --}}
+                <div class="task-item">
+                    <div class="check-circle" id="checkMindReset"></div>
+                    <div>
+                        <strong>Complete Mind Reset</strong>
+                        <small>+0.5 growth points 🧠</small>
+                    </div>
+                </div>
 
-              {{-- Mood Lifting --}}
-              <div class="task-item">
-                  <div class="check-circle">
-                      {{ $completedActions['moodlifting'] ? '✓' : '' }}
-                  </div>
-                  <div>
-                      <strong>Complete Mood Lifting</strong>
-                      <small>+0.5 growth points ☁️</small>
-                  </div>
-              </div>
+                {{-- Mood Lifting --}}
+                <div class="task-item">
+                    <div class="check-circle" id="checkMoodLifting"></div>
+                    <div>
+                        <strong>Complete Mood Lifting</strong>
+                        <small>+0.5 growth points ☁️</small>
+                    </div>
+                </div>
 
-              {{-- Grounding --}}
-              <div class="task-item">
-                  <div class="check-circle">
-                      {{ $completedActions['grounding'] ? '✓' : '' }}
-                  </div>
-                  <div>
-                      <strong>Complete Grounding Exercise</strong>
-                      <small>+0.5 growth points 🌿</small>
-                  </div>
-              </div>
+                {{-- Grounding --}}
+                <div class="task-item">
+                    <div class="check-circle" id="checkGrounding"></div>
+                    <div>
+                        <strong>Complete Grounding Exercise</strong>
+                        <small>+0.5 growth points 🌿</small>
+                    </div>
+                </div>
 
           </div>
     </section>

@@ -152,6 +152,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     updateUI();
 
+    const today = new Date().toISOString().split("T")[0];
+
+    if (completed.length === items.length) {
+      localStorage.setItem(`mindreset-achieved-${today}`, "true");
+    }
+
     // 🎉 NOW WORKS
     showEncouragement("mindreset");
     showSparkles();

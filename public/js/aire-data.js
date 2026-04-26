@@ -77,19 +77,16 @@ const AireData = (() => {
 
   /* ── Get Mood Log from API ── */
   async function getMoodLog() {
-    if (!cache.moodLog || !isCacheFresh()) {
+    if (!cache.moodLog) {
       cache.moodLog = await fetchFromAPI('mood-log', []);
       cache.lastFetch = Date.now();
     }
     return cache.moodLog;
   }
 
-  /* ── Get Streak from API ── */
-  async function getStreak() {
-    if (!cache.streak || !isCacheFresh()) {
-      cache.streak = await fetchFromAPI('streak', 0);
-    }
-    return cache.streak;
+  /* ── Get Streak from localstorage ── */
+  function getStreak() {
+    return parseInt(localStorage.getItem("streak-count") || "0");
   }
 
   /* ── Get Days Tracked from API ── */
@@ -157,12 +154,15 @@ const AireData = (() => {
     const positiveMoods = log.filter(entry => POSITIVE.includes(entry.mood));
     points += positiveMoods.length;
     
-    // Task completions (from localStorage for now, eventually from API)
-    const today = todayStr();
-    if (localStorage.getItem("grounding-achieved") === today) points += 0.5;
-    if (localStorage.getItem("moodbooster-achieved") === today) points += 0.5;
-    if (localStorage.getItem("mindreset-achieved") === today) points += 0.5;
-    if (localStorage.getItem("minitask-achieved") === today) points += 0.5;
+  // Task completions (backend)
+  // ✅ SELF-CARE POINTS (ONLY TODAY)
+  const today = new Date().toISOString().split("T")[0];
+
+  if (localStorage.getItem(`grounding-achieved-${today}`)) points += 0.5;
+  if (localStorage.getItem(`moodlifting-achieved-${today}`)) points += 0.5;
+  if (localStorage.getItem(`mindreset-achieved-${today}`)) points += 0.5;
+  if (localStorage.getItem(`minitask-achieved-${today}`)) points += 0.5;
+  if (localStorage.getItem(`bodybooster-achieved-${today}`)) points += 0.5;
     
     return points;
   }
@@ -200,6 +200,9 @@ const AireData = (() => {
       cache.moodLog = null;
       cache.lastFetch = 0;
 
+      // ✅ UPDATE STREAK (FIRST MOOD ONLY)
+      updateStreak(mood);
+
       return data;
 
     } catch (error) {
@@ -210,13 +213,13 @@ const AireData = (() => {
 
   /* ── Get Stage Info ── */
   async function getStageInfo() {
-    const stageKey = await calcStageKey();
+    const stageKey = await getStageFromSnapshots();
     return STAGES[stageKey] || STAGES.egg;
   }
 
   /* ── Get Stage Key ── */
   async function getStageKey() {
-    return await calcStageKey();
+    return await getStageFromSnapshots();
   }
 
   /* ── Get Latest Entry ── */
@@ -319,6 +322,80 @@ const AireData = (() => {
   /* ── Initialize: Fetch mood meta on load ── */
   fetchMoodMeta();
 
+/* =========================================================
+   STREAK SYSTEM (FIRST MOOD ONLY)
+========================================================= */
+  function updateStreak(mood) {
+    const today = new Date().toISOString().split("T")[0];
+
+    const lastDate = localStorage.getItem("streak-last-date");
+    const streak = parseInt(localStorage.getItem("streak-count") || "0");
+
+    // ✅ prevent multiple updates in same day
+    if (lastDate === today) return;
+
+    const isPositive = POSITIVE.includes(mood);
+
+    let newStreak = 0;
+
+    if (isPositive) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yStr = yesterday.toISOString().split("T")[0];
+
+      if (lastDate === yStr) {
+        newStreak = streak + 1;
+      } else {
+        newStreak = 1;
+      }
+    } else {
+      newStreak = 0;
+    }
+
+    localStorage.setItem("streak-count", newStreak);
+    localStorage.setItem("streak-last-date", today);
+  }
+
+  async function getStageFromSnapshots() {
+    const log = await getMoodLog();
+
+    if (!log.length) return "egg";
+
+    // replicate growth.js logic
+    const byDay = {};
+    log.forEach(e => {
+      if (!byDay[e.date] || e.ts > byDay[e.date].ts) {
+        byDay[e.date] = e;
+      }
+    });
+
+    const days = Object.keys(byDay).sort();
+
+    let cumulativePoints = 0;
+    let stageKey = "egg";
+
+    for (const day of days) {
+      const mood = byDay[day].mood;
+      const isPos = POSITIVE.includes(mood);
+
+      cumulativePoints += 1;
+      if (isPos) cumulativePoints += 1;
+
+      if (localStorage.getItem(`grounding-achieved-${day}`)) cumulativePoints += 0.5;
+      if (localStorage.getItem(`moodlifting-achieved-${day}`)) cumulativePoints += 0.5;
+      if (localStorage.getItem(`mindreset-achieved-${day}`)) cumulativePoints += 0.5;
+      if (localStorage.getItem(`minitask-achieved-${day}`)) cumulativePoints += 0.5;
+      if (localStorage.getItem(`bodybooster-achieved-${day}`)) cumulativePoints += 0.5;
+
+      if (cumulativePoints < 10) stageKey = "egg";
+      else if (cumulativePoints < 30) stageKey = "caterpillar";
+      else if (cumulativePoints < 50) stageKey = "pupa";
+      else stageKey = "butterfly";
+    }
+
+    return stageKey;
+  }
+
   /* Expose everything - Note: Many functions now return Promises! */
   return {
     logMood,
@@ -342,6 +419,7 @@ const AireData = (() => {
     getBondLevel: () => getBondLevel(),
     addXP: (amount) => addXP(amount),
     getXP: () => getXP(),
+    getStageFromSnapshots,
     POSITIVE,
     NEGATIVE,
     MOOD_META: () => MOOD_META,
