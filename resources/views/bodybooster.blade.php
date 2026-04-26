@@ -17,7 +17,7 @@
             <h1>Body-Based Boosters</h1>
             <p>Move and refresh yourself</p>
         </div>
-        <img src="{{ asset('dumbell.jpeg') }}" alt="Dumbbell" class="bb-header-img">
+        <img src="{{ asset('/images/dumbell.jpeg') }}" alt="Dumbbell" class="bb-header-img">
     </div>
     
     <div class="progress-text" id="progressText">

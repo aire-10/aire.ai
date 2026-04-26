@@ -19,6 +19,7 @@ use App\Http\Controllers\JournalController;
 use App\Http\Controllers\MoodController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BreathingController;
+use App\Http\Controllers\BoosterController;
 
 // ==============================================
 // PUBLIC ROUTES (No authentication required)
@@ -90,15 +91,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // =====================
     Route::post('/breathing', [BreathingController::class, 'store'])->name('breathing.store');
     Route::get('/breathing-history', [BreathingController::class, 'history'])->name('breathing.history');
+    Route::get('/breathing-mt', [BreathingController::class, 'history'])->name('breathing-mt');
 
     // =====================
     // SELF CARE (YOUR ROUTES)
     // =====================
     Route::get('/grounding', [GroundingController::class, 'index'])->name('grounding');
     Route::get('/moodbooster', [MoodBoosterController::class, 'index'])->name('moodbooster');
-    Route::get('/moodlifting', [MoodLiftingController::class, 'index'])->name('moodlifting');
+    Route::view('/moodlifting', 'moodlifting')->name('moodlifting');
     Route::get('/mindreset', [MindResetController::class, 'index'])->name('mindreset');
     Route::get('/minitask', [MiniTaskController::class, 'index'])->name('minitask');
+
+    // =====================
+    // BODYBOOSTER (NEW)
+    // =====================
+    Route::get('/bodybooster', function () {
+        return view('bodybooster');
+    })->name('bodybooster');
+
+    // =====================
+    // BOOSTERS
+    // =====================
+
+    Route::get('/booster/progress/{type}', [BoosterController::class, 'get']);
+    Route::post('/booster/toggle', [BoosterController::class, 'toggle']);
+    Route::post('/booster/reset/{type}', [BoosterController::class, 'reset']);
+    Route::get('/booster/check/{type}', [BoosterController::class, 'check']);
 
     // =====================
     // GROWTH (BUTTERFLY)

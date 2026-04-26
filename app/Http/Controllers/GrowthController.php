@@ -56,19 +56,18 @@ class GrowthController extends Controller
         // Calculate stage based on points
         $stage = $this->calculateStage($growthPoints, $streak);
         
-        return response()->json([
-            'moodLog' => $moodLog,
-            'completedActions' => $completedActions,
-            'streak' => $streak,
-            'daysTracked' => $daysTracked,
-            'todayCheckIns' => $todayCheckIns,
-            'latestMood' => $latestMood,
-            'growthPoints' => $growthPoints,
-            'stage' => $stage,
-            'positiveMoods' => ['joyful', 'happy', 'content', 'calm', 'grateful'],
-            'moodMeta' => $this->getMoodMeta()
-        ]);
-    }
+        return view('growth', [
+                'moodLog' => $this->getMoodLog($userId),
+                'completedActions' => $completedActions,
+                'streak' => $streak,
+                'daysTracked' => $daysTracked,
+                'todayCheckIns' => $todayCheckIns,
+                'latestMood' => $latestMood,
+                'growthPoints' => $growthPoints,
+                'stage' => $stage,
+                'moodMeta' => $this->getMoodMeta()
+            ]);
+        }
     
     // Get mood log in the format AireData expects
     private function getMoodLog($userId)
@@ -167,6 +166,7 @@ class GrowthController extends Controller
     private function hasBodyBoosterToday($userId, $today)
     {
         return MoodBooster::where('user_id', $userId)
+            ->where('booster_type', 'bodybooster')
             ->whereDate('completed_at', $today)
             ->exists();
     }
@@ -174,7 +174,8 @@ class GrowthController extends Controller
     // Check if user completed mini task today
     private function hasMiniTaskToday($userId, $today)
     {
-        return MiniTask::where('user_id', $userId)
+        return MoodBooster::where('user_id', $userId)
+            ->where('booster_type', 'minitask')
             ->whereDate('completed_at', $today)
             ->exists();
     }
@@ -182,20 +183,18 @@ class GrowthController extends Controller
     // Check if user did mind reset today
     private function hasMindResetToday($userId, $today)
     {
-        return MindReset::where('user_id', $userId)
+        return MoodBooster::where('user_id', $userId)
+            ->where('booster_type', 'mindreset')
             ->whereDate('completed_at', $today)
-            ->where('completed', true)
             ->exists();
     }
     
     // Check if user did mood lifting activity today
     private function hasMoodLiftingToday($userId, $today)
     {
-        // You can create a mood_lifting_activities table or use session
-        // For now, check if they have a mood entry with notes containing activity
-        return Mood::where('user_id', $userId)
-            ->whereDate('created_at', $today)
-            ->whereNotNull('notes')
+        return MoodBooster::where('user_id', $userId)
+            ->where('booster_type', 'moodlifting')
+            ->whereDate('completed_at', $today)
             ->exists();
     }
     
@@ -293,73 +292,37 @@ class GrowthController extends Controller
     }
     
     // Calculate stage based on points and streak
+
     private function calculateStage($points, $streak)
     {
-        // Check for decline (negative moods)
+        // Fetch recent moods to check for decline
         $recentMoods = Mood::where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
-        
-        $negativeCount = $recentMoods->filter(function($mood) {
-            return $mood->mood_level <= 3;
-        })->count();
-        
+
+        $negativeCount = $recentMoods->filter(fn($m) => $m->mood_level <= 3)->count();
         $hasReachedButterfly = $points >= 50;
-        
+
         if ($hasReachedButterfly && $negativeCount >= 2) {
-            return [
-                'stageKey' => 'struggling',
-                'label' => 'Struggling 💔',
-                'img' => 'struggling.jpeg',
-                'color' => '#a07070',
-                'xpMax' => 2,
-                'recoveryNeeded' => 2
-            ];
-        } elseif ($hasReachedButterfly && $negativeCount >= 1) {
-            return [
-                'stageKey' => 'surviving',
-                'label' => 'Surviving 🌱',
-                'img' => 'surviving.jpeg',
-                'color' => '#b0a060',
-                'xpMax' => 3,
-                'recoveryNeeded' => 3
-            ];
-        } elseif ($points >= 50) {
-            return [
-                'stageKey' => 'butterfly',
-                'label' => 'Butterfly 🦋',
-                'img' => 'adult_glow.png',
-                'color' => '#3a8c3a',
-                'xpMax' => 100
-            ];
-        } elseif ($points >= 30) {
-            return [
-                'stageKey' => 'pupa',
-                'label' => 'Pupa 🦋',
-                'img' => 'pupa.png',
-                'color' => '#4c7a60',
-                'xpMax' => 50
-            ];
-        } elseif ($points >= 10) {
-            return [
-                'stageKey' => 'caterpillar',
-                'label' => 'Caterpillar 🐛',
-                'img' => 'caterpillar.png',
-                'color' => '#7aab72',
-                'xpMax' => 30
-            ];
-        } else {
-            return [
-                'stageKey' => 'egg',
-                'label' => 'Egg 🥚',
-                'img' => 'egg.png',
-                'color' => '#8a7060',
-                'xpMax' => 10
-            ];
+            return ['stageKey' => 'struggling', 'label' => 'Struggling 💔', 'img' => 'struggling.jpeg', 'color' => '#a07070', 'xpMax' => 2];
+        } 
+        if ($hasReachedButterfly && $negativeCount >= 1) {
+            return ['stageKey' => 'surviving', 'label' => 'Surviving 🌱', 'img' => 'surviving.jpeg', 'color' => '#b0a060', 'xpMax' => 3];
         }
+        if ($points >= 50) {
+            return ['stageKey' => 'butterfly', 'label' => 'Butterfly 🦋', 'img' => 'adult_glow.png', 'color' => '#3a8c3a', 'xpMax' => 100];
+        } 
+        if ($points >= 30) {
+            return ['stageKey' => 'pupa', 'label' => 'Pupa 🦋', 'img' => 'pupa.png', 'color' => '#4c7a60', 'xpMax' => 50];
+        } 
+        if ($points >= 10) {
+            return ['stageKey' => 'caterpillar', 'label' => 'Caterpillar 🐛', 'img' => 'caterpillar.png', 'color' => '#7aab72', 'xpMax' => 30];
+        }
+
+        return ['stageKey' => 'egg', 'label' => 'Egg 🥚', 'img' => 'egg.png', 'color' => '#8a7060', 'xpMax' => 10];
     }
-    
+        
     // API endpoint to record an action completion
     public function recordAction(Request $request)
     {

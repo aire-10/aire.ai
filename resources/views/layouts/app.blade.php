@@ -7,6 +7,7 @@
     <title>Airé • @yield('title')</title>
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     @stack('styles')
+    @stack('styles') 
     @stack('head-scripts')
 </head>
 <body class="@yield('body-class')">
@@ -34,6 +35,7 @@
                     <a href="{{ url('/moodlifting') }}">💭 Mood Lifting</a>
                     <a href="{{ url('/mindreset') }}">🧘 Mind Reset</a>
                     <a href="{{ url('/minitask') }}">✅ Mini Tasks</a>
+                    <a href="{{ url('/bodybooster') }}">💪 Body Booster</a>
                 </div>
             </div>
 

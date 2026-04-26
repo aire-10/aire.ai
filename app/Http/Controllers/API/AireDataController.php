@@ -16,12 +16,12 @@ class AireDataController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        Auth::id()
     }
     
     public function getMoodLog()
     {
-        $moods = Mood::where('user_id', Auth::id())
+        $moods = Mood::where('user_id', 1)
             ->orderBy('created_at', 'asc')
             ->get();
         
@@ -120,7 +120,7 @@ class AireDataController extends Controller
         ]);
         
         $mood = Mood::create([
-            'user_id' => Auth::id(),
+            'user_id' => 1,
             'mood_level' => $this->mapMoodNameToLevel($request->mood),
             'notes' => $request->note,
             'date' => now()->toDateString(),
@@ -131,8 +131,8 @@ class AireDataController extends Controller
         return response()->json([
             'success' => true,
             'mood' => $mood,
-            'streak' => $this->calculateStreak(Auth::id()),
-            'stageKey' => $this->calculateStageKey(Auth::id())
+            'streak' => $this->calculateStreak(1)
+            'stageKey' => $this->calculateStageKey(1)
         ]);
     }
     

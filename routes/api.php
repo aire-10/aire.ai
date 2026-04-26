@@ -1,27 +1,45 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\GroundingController;
 use App\Http\Controllers\MoodBoosterController;
-use App\Http\Controllers\MoodLiftingController;
 use App\Http\Controllers\MindResetController;
 use App\Http\Controllers\MiniTaskController;
 use App\Http\Controllers\GrowthController;
 use App\Http\Controllers\HistoryController;
-use App\Http\Controllers\Api\AireDataController;
+use App\Http\Controllers\BreathingController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\API\AireDataController;
 
-Route::middleware('auth:sanctum')->group(function () {
-    
-    // AireData API endpoints
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+// PUBLIC
+Route::post('/breathing', [BreathingController::class, 'store']);
+
+// GROUP ALL API ROUTES
+Route::group([], function () {
+
+    // ======================
+    // AIRE DATA (MOOD)
+    // ======================
     Route::get('/mood-log', [AireDataController::class, 'getMoodLog']);
+    Route::post('/log-mood', [AireDataController::class, 'logMood']);
+
     Route::get('/streak', [AireDataController::class, 'getStreak']);
     Route::get('/days-tracked', [AireDataController::class, 'getDaysTracked']);
     Route::get('/today-checkins', [AireDataController::class, 'getTodayCheckInCount']);
     Route::get('/latest-mood', [AireDataController::class, 'getLatestMood']);
     Route::get('/mood-meta', [AireDataController::class, 'getMoodMeta']);
     Route::get('/positive-moods', [AireDataController::class, 'getPositiveMoods']);
-    Route::post('/log-mood', [AireDataController::class, 'logMood']);
-    
-    // Grounding API endpoints
+
+    // ======================
+    // GROUNDING
+    // ======================
     Route::prefix('grounding')->group(function () {
         Route::post('/progress', [GroundingController::class, 'saveProgress']);
         Route::get('/progress', [GroundingController::class, 'getProgress']);
@@ -31,49 +49,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/reset', [GroundingController::class, 'resetProgress']);
         Route::get('/history', [GroundingController::class, 'getHistory']);
     });
-    
-    // Mood Booster API endpoints
+
+    // ======================
+    // MOOD BOOSTER
+    // ======================
     Route::prefix('moodbooster')->group(function () {
-        Route::post('/complete', [MoodBoosterController::class, 'complete']);
-        Route::get('/history', [MoodBoosterController::class, 'history']);
-        Route::get('/stats', [MoodBoosterController::class, 'getStats']);
-    });
-    
-    // Mood Lifting API endpoints
-    Route::prefix('moodlifting')->group(function () {
-        Route::post('/activity', [MoodLiftingController::class, 'completeActivity']);
-        Route::post('/track-mood', [MoodLiftingController::class, 'trackMood']);
-        Route::get('/activities', [MoodLiftingController::class, 'getActivities']);
-    });
-    
-    // Mind Reset API endpoints
-    Route::prefix('mindreset')->group(function () {
-        Route::post('/start', [MindResetController::class, 'start']);
-        Route::post('/complete', [MindResetController::class, 'complete']);
-        Route::get('/history', [MindResetController::class, 'history']);
-        Route::get('/stats', [MindResetController::class, 'getStats']);
-        Route::get('/technique/{technique}', [MindResetController::class, 'getTechnique']);
-    });
-    
-    // Mini Task API endpoints
-    Route::prefix('minitask')->group(function () {
-        Route::post('/store', [MiniTaskController::class, 'store']);
-        Route::put('/{id}', [MiniTaskController::class, 'update']);
-        Route::patch('/{id}/complete', [MiniTaskController::class, 'complete']);
-        Route::delete('/{id}', [MiniTaskController::class, 'destroy']);
-        Route::post('/reorder', [MiniTaskController::class, 'reorder']);
-        Route::get('/suggestions', [MiniTaskController::class, 'getSuggestions']);
-        Route::get('/analytics', [MiniTaskController::class, 'analytics']);
-    });
-    
-    // Growth API endpoints
-    Route::prefix('growth')->group(function () {
-        Route::post('/metrics', [GrowthController::class, 'updateMetrics']);
-        Route::get('/timeline', [GrowthController::class, 'getTimeline']);
-        Route::get('/achievements', [GrowthController::class, 'achievements']);
-    });
-        // Mood Booster API Routes
-    Route::middleware('auth:sanctum')->prefix('moodbooster')->group(function () {
         Route::post('/update-mood', [MoodBoosterController::class, 'updateMood']);
         Route::post('/complete-activity', [MoodBoosterController::class, 'completeActivity']);
         Route::get('/today-status', [MoodBoosterController::class, 'getTodayStatus']);
@@ -84,19 +64,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/moodlifting-progress', [MoodBoosterController::class, 'saveMoodLiftingProgress']);
         Route::get('/moodlifting-progress', [MoodBoosterController::class, 'getMoodLiftingProgress']);
     });
-        // Mood Lifting API Routes
-    Route::middleware('auth:sanctum')->prefix('moodlifting')->group(function () {
-        Route::post('/progress', [MoodLiftingController::class, 'saveProgress']);
-        Route::get('/progress', [MoodLiftingController::class, 'getProgress']);
-        Route::get('/today-completion', [MoodLiftingController::class, 'checkTodayCompletion']);
-        Route::get('/stats', [MoodLiftingController::class, 'getStats']);
-        Route::get('/thoughts', [MoodLiftingController::class, 'getThoughts']);
-        Route::delete('/reset', [MoodLiftingController::class, 'resetProgress']);
-        Route::get('/weekly-data', [MoodLiftingController::class, 'getWeeklyData']);
-        Route::get('/encouragement-messages', [MoodLiftingController::class, 'getEncouragementMessages']);
-    });
-    // Mind Reset API Routes
-    Route::middleware('auth:sanctum')->prefix('mindreset')->group(function () {
+
+    // ======================
+    // MIND RESET
+    // ======================
+    Route::prefix('mindreset')->group(function () {
         Route::post('/progress', [MindResetController::class, 'saveProgress']);
         Route::get('/progress', [MindResetController::class, 'getProgress']);
         Route::get('/today-completion', [MindResetController::class, 'checkTodayCompletion']);
@@ -109,8 +81,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/session/complete', [MindResetController::class, 'completeSession']);
         Route::get('/sessions', [MindResetController::class, 'getSessionHistory']);
     });
-    // Mini Task API Routes
-    Route::middleware('auth:sanctum')->prefix('minitask')->group(function () {
+
+    // ======================
+    // MINI TASK
+    // ======================
+    Route::prefix('minitask')->group(function () {
         Route::post('/progress', [MiniTaskController::class, 'saveProgress']);
         Route::get('/progress', [MiniTaskController::class, 'getProgress']);
         Route::get('/today-completion', [MiniTaskController::class, 'checkTodayCompletion']);
@@ -120,12 +95,25 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/weekly-data', [MiniTaskController::class, 'getWeeklyData']);
         Route::get('/encouragement-messages', [MiniTaskController::class, 'getEncouragementMessages']);
     });
-    // Home Dashboard API Routes
-    Route::middleware('auth:sanctum')->prefix('home')->group(function () {
+
+    // ======================
+    // GROWTH
+    // ======================
+    Route::prefix('growth')->group(function () {
+        Route::post('/metrics', [GrowthController::class, 'updateMetrics']);
+        Route::get('/timeline', [GrowthController::class, 'getTimeline']);
+        Route::get('/achievements', [GrowthController::class, 'achievements']);
+    });
+
+    // ======================
+    // HOME
+    // ======================
+    Route::prefix('home')->group(function () {
         Route::get('/dashboard-data', [HomeController::class, 'getDashboardData']);
         Route::post('/log-mood', [HomeController::class, 'logMood']);
         Route::get('/pet-stats', [HomeController::class, 'getPetStats']);
         Route::get('/affirmation', [HomeController::class, 'getAffirmation']);
         Route::get('/affirmations', [HomeController::class, 'getAffirmations']);
     });
-});
+
+}); // ✅ ONLY ONE closing bracket

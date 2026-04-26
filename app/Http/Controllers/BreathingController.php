@@ -10,13 +10,17 @@ class BreathingController extends Controller
 {
     public function store(Request $request)
     {
+        $request->validate([
+            'duration' => 'required|integer'
+        ]);
+
         BreathingSession::create([
             'user_id' => Auth::id(),
             'duration' => $request->duration
         ]);
 
         return response()->json([
-            'message' => 'Breathing session saved'
+            'message' => 'Breathing session saved successfully'
         ]);
     }
 
