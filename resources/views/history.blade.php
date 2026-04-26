@@ -32,22 +32,6 @@
         margin-left: 15px;
     }
     
-    .rename-chat-btn {
-        background: #4c7a60;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 500;
-        transition: background 0.2s;
-    }
-    
-    .rename-chat-btn:hover {
-        background: #3e644f;
-    }
-    
     .delete-chat-btn {
         background: #dc3545;
         color: white;

@@ -95,17 +95,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  async function renameSession(id, newName) {
-    await fetch(`/history/session/${id}/rename`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-      },
-      body: JSON.stringify({ title: newName })
-    });
-  }
-
   async function render() {
     if (!listEl) return;
 
@@ -129,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // NEW: Visible buttons layout
+      // ONLY DELETE BUTTON - NO RENAME BUTTON
       listEl.innerHTML = paginated.map(s => `
         <div class="history-row" data-id="${s.id}">
           <div class="history-row-main" onclick="openSession('${s.id}')">
@@ -138,7 +127,6 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="history-date">${fmt(s.updatedAt)}</div>
           </div>
           <div class="history-row-buttons">
-            <button class="rename-chat-btn" data-id="${s.id}" data-title="${escapeHtml(s.title || "New Chat")}">Rename</button>
             <button class="delete-chat-btn danger" data-id="${s.id}">Delete</button>
           </div>
         </div>
@@ -167,21 +155,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Event delegation for buttons
+  // Event delegation for Delete button only
   listEl?.addEventListener("click", async (e) => {
-    // Rename button
-    if (e.target.classList.contains("rename-chat-btn")) {
-      e.stopPropagation();
-      const id = e.target.dataset.id;
-      const currentTitle = e.target.dataset.title;
-      const newName = prompt("Enter new name:", currentTitle);
-      if (!newName || newName === currentTitle) return;
-
-      await renameSession(id, newName);
-      render();
-      return;
-    }
-
     // Delete button
     if (e.target.classList.contains("delete-chat-btn")) {
       e.stopPropagation();

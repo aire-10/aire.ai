@@ -13,6 +13,7 @@ class AiChatService
             $apiKey = env('GEMINI_API_KEY');
             
             if (empty($apiKey)) {
+                Log::error('GEMINI_API_KEY is missing');
                 return "🔑 API key not configured. Please add GEMINI_API_KEY to .env file. 💚";
             }
 
@@ -30,6 +31,7 @@ class AiChatService
             
             foreach ($crisisKeywords as $keyword) {
                 if (strpos($userMessageLower, $keyword) !== false) {
+                    Log::info('Crisis detected: ' . $keyword);
                     return "💚 I hear that you're going through an extremely difficult time right now.\n\n" .
                            "Your feelings are valid, and you don't have to go through this alone.\n\n" .
                            "📞 **Please reach out for immediate support:**\n" .
@@ -146,27 +148,33 @@ IMPORTANT: Vary your responses. Don't repeat the same phrases. Be creative and e
                           ($isStressRelated ? "IMPORTANT: User is showing signs of stress. Suggest self-care tools like breathing exercises or grounding techniques. " : "") . 
                           "User: " . $userMessage . "\n\nAiré:";
 
+            // ✅ USING GEMINI 2.5 FLASH (newer model that works with your key)
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
+
+            Log::info('Sending request to Gemini API');
+            Log::info('URL: ' . $url);
+
             // Send to Gemini API
             $response = Http::timeout(30)->withHeaders([
                 'Content-Type' => 'application/json',
-            ])->post(
-                "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={$apiKey}",
-                [
-                    "contents" => [
-                        [
-                            "parts" => [
-                                ["text" => $fullPrompt]
-                            ]
+            ])->post($url, [
+                "contents" => [
+                    [
+                        "parts" => [
+                            ["text" => $fullPrompt]
                         ]
-                    ],
-                    "generationConfig" => [
-                        "temperature" => 0.9,
-                        "maxOutputTokens" => 250,
-                        "topP" => 0.95,
-                        "topK" => 40
                     ]
+                ],
+                "generationConfig" => [
+                    "temperature" => 0.9,
+                    "maxOutputTokens" => 1000,
+                    "topP" => 0.95,
+                    "topK" => 40
                 ]
-            );
+            ]);
+
+            $statusCode = $response->status();
+            Log::info('Gemini API response status: ' . $statusCode);
 
             if (!$response->successful()) {
                 Log::error('Gemini API Error: ' . $response->body());
@@ -190,6 +198,7 @@ IMPORTANT: Vary your responses. Don't repeat the same phrases. Be creative and e
             if ($reply && trim($reply) !== '') {
                 $reply = trim($reply);
                 $reply = preg_replace('/^Airé:\s*/i', '', $reply);
+                Log::info('AI response generated');
                 return $reply;
             }
 
