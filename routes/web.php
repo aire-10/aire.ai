@@ -52,8 +52,7 @@ Route::post('/forgot-password', [ForgotPasswordController::class, 'reset'])->nam
 // AUTHENTICATED ROUTES (Require login)
 // ==============================================
 
-Route::middleware(['auth', 'verified'])->group(function () {
-
+Route::middleware(['auth'])->group(function () {
     // =====================
     // HOME / DASHBOARD
     // =====================
