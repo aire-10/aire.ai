@@ -1,3 +1,12 @@
+/* =========================================
+   HIDE TASK PROGRESS BAR (MINITASK, BODYBOOSTER PAGES)
+========================================= */
+
+.minitask-page .task-progress,
+.booster-page .task-progress {
+  display: none !important;
+}
+
 /* ─── Reset & Variables ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1019,4 +1028,14 @@ body > * { position: relative; z-index: 1; }
 .btn-outline:hover {
   background: #2d5c28;
   color: white;
+}
+
+/* Moodlifting tick */
+.ml-tick {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-weight: bold;
+  color: #2d5c28;
+  font-size: 18px;
 }

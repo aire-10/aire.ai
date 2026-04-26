@@ -194,7 +194,13 @@ const AireData = (() => {
         throw new Error(`Failed (${response.status})`);
       }
 
-      return await response.json();
+      const data = await response.json();
+
+      // ✅ CLEAR CACHE AFTER SAVE
+      cache.moodLog = null;
+      cache.lastFetch = 0;
+
+      return data;
 
     } catch (error) {
       console.error('❌ Error logging mood:', error);

@@ -13,8 +13,12 @@ return new class extends Migration
     {
         Schema::create('moods', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('mood'); // happy, sad, etc.
+            $table->unsignedBigInteger('user_id');
+
+            $table->integer('mood_level');   // ✅ REQUIRED
+            $table->text('notes')->nullable(); // ✅ REQUIRED
+            $table->date('date');           // ✅ REQUIRED
+
             $table->timestamps();
         });
     }
