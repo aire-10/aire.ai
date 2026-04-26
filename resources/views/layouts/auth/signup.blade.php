@@ -9,7 +9,7 @@
       <h1 class="auth-title">Create your account</h1>
       <p class="auth-subtitle">Start your journey with Airé 🌿</p>
 
-      <form method="POST" action="{{ url('/signup') }}" class="auth-form">
+      <form method="POST" action="{{ url('/signup') }}" class="auth-form" id="signupForm">
         @csrf
         @if ($errors->any())
           <div class="auth-error">
@@ -84,9 +84,6 @@
 
 @endsection
 
-
 @section('scripts')
-
 <script src="{{ asset('js/signup.js') }}"></script>
-
 @endsection

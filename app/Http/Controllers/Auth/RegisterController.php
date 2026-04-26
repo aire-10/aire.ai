@@ -10,40 +10,30 @@ use Illuminate\Support\Facades\Auth;
 
 class RegisterController extends Controller
 {
+    // Show signup page
     public function showRegistrationForm()
     {
         return view('layouts.auth.signup');
     }
 
+    // Handle registration
     public function register(Request $request)
     {
-        // Validate
-        $request->validate([
+        $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'min:6', 'confirmed'],
         ]);
 
-        // Create user
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
         ]);
 
-        // Login the user
         Auth::login($user);
-
-        // Regenerate session
-        $request->session()->regenerate();
-
-        // Check if user is logged in
-        if (Auth::check()) {
-            // Redirect to home
-            return redirect('/home');
-        }
-
-        // Fallback - still redirect to home
+        
+        // ✅ Make sure this redirects to /home
         return redirect('/home');
     }
 }
