@@ -30,15 +30,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function fetchSessions() {
-    const res = await fetch('/history/sessions');
-    const data = await res.json();
-    return data.sessions || [];
+    try {
+      const res = await fetch('/history/sessions');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      return data.sessions || [];
+    } catch (err) {
+      console.error('Fetch error:', err);
+      return [];
+    }
   }
 
   function applyFilters(items) {
     let result = items;
 
-    // SEARCH
     if (query) {
       const q = query.toLowerCase();
       result = result.filter(s =>
@@ -47,14 +52,12 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     }
 
-    // MOOD FILTER
     if (selectedMood !== "any") {
       result = result.filter(s =>
         (s.mood || "").toLowerCase() === selectedMood
       );
     }
 
-    // TIME FILTER
     if (selectedTime !== "all") {
       const now = new Date();
 
@@ -67,10 +70,9 @@ document.addEventListener("DOMContentLoaded", () => {
           return date >= weekAgo;
         }
 
-        // MONTH FILTER
         const monthIndex = [
-          "january","february","march","april","may","june",
-          "july","august","september","october","november","december"
+          "january", "february", "march", "april", "may", "june",
+          "july", "august", "september", "october", "november", "december"
         ].indexOf(selectedTime);
 
         return date.getMonth() === monthIndex;
@@ -90,6 +92,17 @@ document.addEventListener("DOMContentLoaded", () => {
       headers: {
         "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
       }
+    });
+  }
+
+  async function renameSession(id, newName) {
+    await fetch(`/history/session/${id}/rename`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({ title: newName })
     });
   }
 
@@ -116,27 +129,21 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // NEW: Visible buttons layout
       listEl.innerHTML = paginated.map(s => `
         <div class="history-row" data-id="${s.id}">
-          <div class="history-row-main">
+          <div class="history-row-main" onclick="openSession('${s.id}')">
             <div class="history-title">${escapeHtml(s.title || "New Chat")}</div>
             <div class="history-preview">${escapeHtml(s.preview || "No messages yet")}</div>
             <div class="history-date">${fmt(s.updatedAt)}</div>
           </div>
-            <div class="history-row-actions">
-              <span class="history-open">›</span>
-
-              <button class="history-kebab">⋮</button>
-
-              <div class="history-menu">
-                <button class="rename-btn">Rename</button>
-                <button class="delete-btn danger">Delete</button>
-              </div>
-            </div>
+          <div class="history-row-buttons">
+            <button class="rename-chat-btn" data-id="${s.id}" data-title="${escapeHtml(s.title || "New Chat")}">Rename</button>
+            <button class="delete-chat-btn danger" data-id="${s.id}">Delete</button>
+          </div>
         </div>
       `).join("");
 
-      // Pagination
       if (prevBtn) prevBtn.disabled = currentPage <= 1;
       if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
 
@@ -160,85 +167,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // CLICK HANDLING
+  // Event delegation for buttons
   listEl?.addEventListener("click", async (e) => {
-
-    // =========================
-    // TOGGLE DROPDOWN
-    // =========================
-    const kebabBtn = e.target.closest(".history-kebab");
-    if (kebabBtn) {
+    // Rename button
+    if (e.target.classList.contains("rename-chat-btn")) {
       e.stopPropagation();
+      const id = e.target.dataset.id;
+      const currentTitle = e.target.dataset.title;
+      const newName = prompt("Enter new name:", currentTitle);
+      if (!newName || newName === currentTitle) return;
 
-      const row = kebabBtn.closest(".history-row");
-      const menu = row.querySelector(".history-menu");
-
-      document.querySelectorAll(".history-menu").forEach(m => {
-        if (m !== menu) m.classList.remove("is-open");
-      });
-
-      menu.classList.toggle("is-open");
-      return;
-    }
-
-    // =========================
-    // RENAME
-    // =========================
-    if (e.target.classList.contains("rename-btn")) {
-      e.stopPropagation();
-
-      const row = e.target.closest(".history-row");
-      const id = row.dataset.id;
-
-      const newName = prompt("Enter new name:");
-      if (!newName) return;
-
-      await fetch(`/history/session/${id}/rename`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify({ name: newName })
-      });
-
+      await renameSession(id, newName);
       render();
       return;
     }
 
-    // =========================
-    // DELETE
-    // =========================
-    if (e.target.classList.contains("delete-btn")) {
+    // Delete button
+    if (e.target.classList.contains("delete-chat-btn")) {
       e.stopPropagation();
-
-      const row = e.target.closest(".history-row");
-      const id = row.dataset.id;
-
+      const id = e.target.dataset.id;
       if (!confirm("Delete this chat?")) return;
 
       await deleteSession(id);
       render();
       return;
     }
-
-    // =========================
-    // 🔥 NOW handle menu click block
-    // =========================
-    if (e.target.closest(".history-menu")) {
-      e.stopPropagation();
-      return;
-    }
-
-    // =========================
-    // OPEN CHAT
-    // =========================
-    const row = e.target.closest(".history-row");
-    if (!row) return;
-
-    const id = row.dataset.id;
-    openSession(id);
   });
+
+  // Make openSession available globally
+  window.openSession = openSession;
 
   // Search
   searchEl?.addEventListener("input", () => {
@@ -247,6 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     render();
   });
 
+  // Pagination
   prevBtn?.addEventListener("click", () => {
     if (currentPage > 1) {
       currentPage--;
@@ -259,37 +217,14 @@ document.addEventListener("DOMContentLoaded", () => {
     render();
   });
 
-  render();
-
-  document.addEventListener("click", (e) => {
-
-    // Ignore clicks on kebab or menu
-    if (e.target.closest(".history-kebab") || e.target.closest(".history-menu")) {
-      return;
-    }
-
-    // Close all menus
-    document.querySelectorAll(".history-menu").forEach(m => {
-      m.classList.remove("is-open");
-    });
-
-  });
-
-// =========================
-// PILL DROPDOWN (FILTERS)
-// =========================
+  // Filter dropdowns
   document.querySelectorAll(".pill-dd > button").forEach(btn => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-
       const wrapper = btn.parentElement;
-
-      // close others
       document.querySelectorAll(".pill-dd").forEach(w => {
         if (w !== wrapper) w.classList.remove("is-open");
       });
-
-      // toggle current
       wrapper.classList.toggle("is-open");
     });
   });
@@ -300,12 +235,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // =========================
-  // FILTER CLICK HANDLING
-  // =========================
   document.querySelectorAll(".pill-item").forEach(item => {
     item.addEventListener("click", () => {
-
       const wrapper = item.closest(".pill-dd");
       const type = wrapper.dataset.dd;
       const value = item.dataset.value;
@@ -318,24 +249,23 @@ document.addEventListener("DOMContentLoaded", () => {
         selectedTime = value;
       }
 
-      // update label text
       const label = wrapper.querySelector(".pill-label");
       label.textContent = item.textContent;
 
       wrapper.classList.remove("is-open");
-
-      render(); // 🔥 IMPORTANT
+      render();
     });
   });
 
   document.querySelector('[data-filter="all"]')?.addEventListener("click", () => {
     selectedMood = "any";
     selectedTime = "all";
-
     document.getElementById("moodLabel").textContent = "Mood: Any";
     document.getElementById("timeLabel").textContent = "All";
-
     render();
   });
+
+  // Initial render
+  render();
 
 });
