@@ -75,11 +75,7 @@ function finishBreathing() {
   running = false;
   document.getElementById('timer').textContent = "✓";
   document.getElementById('phase').textContent = "DONE!";
-  
-  // Save to database
   saveBreathingSession();
-  // Refresh the dashboard
-  renderProgressDashboard();
 }
 
 
@@ -100,7 +96,7 @@ async function saveBreathingSession() {
     const secondsPerCycle = 4 + 7 + 8;
     const totalDuration = TOTAL_CYCLES * secondsPerCycle;
     
-    console.log(`💾 Saving: ${TOTAL_CYCLES} cycles, ${totalDuration} seconds`);
+    console.log(`💾 Saving: ${TOTAL_CYCLES} cycles`);
 
     const response = await fetch('/breathing', {
       method: 'POST',
@@ -115,11 +111,8 @@ async function saveBreathingSession() {
     });
 
     const data = await response.json();
-    if (data.success) {
-      console.log(`✅ Saved successfully! ${TOTAL_CYCLES} cycles recorded.`);
-    } else {
-      console.error("❌ Server error:", data);
-    }
+    console.log("✅ Saved:", data);
+
   } catch (err) {
     console.error("❌ Save error:", err);
   }
@@ -130,6 +123,7 @@ async function saveBreathingSession() {
 function initCycleSelector() {
   const dots = document.querySelectorAll('.cycle-dot');
   const label = document.getElementById('cycleChosenVal');
+  
   dots.forEach(dot => {
     dot.addEventListener('click', () => {
       if (running) return;
@@ -143,51 +137,16 @@ function initCycleSelector() {
 }
 
 
-// ===== PROGRESS DASHBOARD - SUMS CYCLES PER DAY =====
-async function renderProgressDashboard() {
-  const barsEl = document.getElementById('progressBars');
-  const labelEl = document.getElementById('progressLabel');
-  if (!barsEl || !labelEl) return;
-
-  try {
-    const response = await fetch('/api/breathing/weekly-cycles');
-    if (!response.ok) throw new Error('Failed to fetch');
-    
-    const cycles = await response.json();
-    console.log("Weekly cycles data (sum per day):", cycles);
-    
-    let total = 0;
-    let html = '';
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    
-    for (let i = 0; i < cycles.length; i++) {
-      total += cycles[i];
-      html += `<div class="prog-bar-col">
-          <div class="prog-bar" style="background: #4c7a60; padding: 5px; border-radius: 5px; text-align: center;">${cycles[i]}</div>
-          <span style="font-size: 12px;">${dayNames[i]}</span>
-        </div>`;
-    }
-    
-    barsEl.innerHTML = html;
-    labelEl.innerHTML = `This week's Breathings:<br><strong>${total} Cycles Completed</strong>`;
-    console.log(`Total cycles this week: ${total}`);
-    
-  } catch (err) {
-    console.error("Failed to load cycles:", err);
-    labelEl.innerHTML = `This week's Breathings:<br><strong>0 Cycles Completed</strong>`;
-  }
-}
-
-
 // ===== SIDEBAR TOGGLE =====
 function toggleSidebar(section) {
-  const bodyId = section === 'progress' ? 'progressBody' : 'howBody';
-  const arrowId = section === 'progress' ? 'progressArrow' : 'howArrow';
+  const bodyId = section === 'how' ? 'howBody' : null;
+  const arrowId = section === 'how' ? 'howArrow' : null;
+  if (!bodyId) return;
   const body = document.getElementById(bodyId);
   const arrow = document.getElementById(arrowId);
   if (!body) return;
   const hidden = body.classList.toggle('hidden');
-  arrow.textContent = hidden ? '▼' : '▲';
+  if (arrow) arrow.textContent = hidden ? '▼' : '▲';
 }
 
 
@@ -235,6 +194,5 @@ async function loadMoodEntries() {
 window.addEventListener('DOMContentLoaded', () => {
   updateDisplay();
   initCycleSelector();
-  renderProgressDashboard();
   loadMoodEntries();
 });

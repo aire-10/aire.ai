@@ -29,24 +29,7 @@ body.breathing-page {
     <div class="breathing-sidebar">
         <div class="sidebar-card">
 
-            <!-- PROGRESS -->
-            <button class="sidebar-toggle" onclick="toggleSidebar('progress')">
-                BREATHING DASHBOARD
-                <span class="toggle-arrow" id="progressArrow">▼</span>
-            </button>
-
-            <div class="sidebar-body" id="progressBody">
-                <div class="progress-bars" id="progressBars"></div>
-
-                <p class="progress-label" id="progressLabel">
-                    This week's Breathings:<br>
-                    <strong>0 Cycles Completed</strong>
-                </p>
-            </div>
-
-            <div class="sidebar-divider"></div>
-
-            <!-- HOW -->
+            <!-- HOW SECTION (KEPT) -->
             <button class="sidebar-toggle" onclick="toggleSidebar('how')">
                 HOW?
                 <span class="toggle-arrow" id="howArrow">▼</span>
@@ -55,15 +38,16 @@ body.breathing-page {
             <div class="sidebar-body" id="howBody">
                 <p class="how-title">How it works</p>
                 <ul class="how-list">
-                    <li>Inhale slowly</li>
-                    <li>Hold your breath</li>
-                    <li>Exhale gently</li>
+                    <li>Inhale slowly (4 sec)</li>
+                    <li>Hold your breath (7 sec)</li>
+                    <li>Exhale gently (8 sec)</li>
+                    <li>Repeat for selected cycles</li>
                 </ul>
             </div>
 
-            <!-- CYCLE SELECTOR -->
+            <!-- CYCLE SELECTOR (KEPT) -->
             <div class="cycle-selector-wrap">
-                <p class="cycle-selector-label">Pick Set Cycles</p>
+                <p class="cycle-selector-label">🎯 Select Number of Cycles</p>
 
                 <div class="cycle-selector">
                     @for ($i = 1; $i <= 5; $i++)
@@ -72,7 +56,7 @@ body.breathing-page {
                 </div>
 
                 <p class="cycle-chosen">
-                    Selected: <strong id="cycleChosenVal">4</strong>
+                    Selected: <strong id="cycleChosenVal">4</strong> cycles
                 </p>
             </div>
 
@@ -112,7 +96,7 @@ body.breathing-page {
                         </div>
 
                         <p class="cycle-text">
-                            CYCLE: <span id="cycle">1</span>
+                            CYCLE: <span id="cycle">1</span> / <span id="totalCycles">4</span>
                         </p>
                     </div>
 
