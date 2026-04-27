@@ -116,4 +116,9 @@ Route::group([], function () {
         Route::get('/affirmations', [HomeController::class, 'getAffirmations']);
     });
 
+    // ======================
+    // BREATHING (NEW)
+    // ======================
+    Route::get('/breathing/weekly-cycles', [BreathingController::class, 'getWeeklyCycles']);
+
 }); // ✅ ONLY ONE closing bracket
