@@ -38,7 +38,18 @@
     </div>
 </div>
 <img src="{{ asset('images/logo.png') }}" alt="Butterfly" class="ml-butterfly">
-<div class="mood-toast" id="moodToast"><div class="mood-toast-body"><p class="mood-toast-title" id="toastTitle"></p><p class="mood-toast-msg" id="toastMsg"></p><p class="mood-toast-tip" id="toastTip"></p></div></div>
+
+<div class="mood-toast" id="moodToast">
+  <div class="mood-toast-img-wrap">
+    <img id="toastPetImg" src="{{ asset('images/egg.png') }}" />
+  </div>
+  <div class="mood-toast-body">
+    <p id="toastTitle">🌱 Your butterfly is growing!</p>
+    <p id="toastMsg"></p>
+    <p id="toastTip"></p>
+  </div>
+  <button id="toastClose">✕</button>
+</div>
 @endsection
 
 @push('scripts')

@@ -70,15 +70,28 @@
 
     <div style="display:flex; gap:10px; justify-content:center;">
       <button id="focusDone" class="btn btn-green">Done</button>
-      <button id="focusNext" class="btn btn-outline">Next Step →</button>
+      <button id="focusNext" class="btn btn-outline">Skip →</button>
     </div>
   </div>
+</div>
+
+<div class="mood-toast" id="moodToast">
+  <div class="mood-toast-img-wrap">
+    <img id="toastPetImg" src="{{ asset('images/egg.png') }}" />
+  </div>
+  <div class="mood-toast-body">
+    <p id="toastTitle">🌱 Your butterfly is growing!</p>
+    <p id="toastMsg"></p>
+    <p id="toastTip"></p>
+  </div>
+  <button id="toastClose">✕</button>
 </div>
 @endsection
 
 @push('scripts')
 
 <!-- ✅ LOAD booster.js ONLY ONCE -->
+<script src="{{ asset('js/aire-data.js') }}"></script>
 <script src="{{ asset('js/booster.js') }}"></script>
 
 <script>
@@ -99,7 +112,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* LOAD BACKEND */
   const res = await fetch('/booster/progress/mindreset');
   const data = await res.json();
-  completed = data.completed || [];
+
+  const today = new Date().toISOString().split("T")[0];
+
+  if (!data.date || data.date !== today) {
+    completed = [];
+  } else {
+    completed = data.completed || [];
+  }
 
   function updateUI() {
     items.forEach((el, i) => {
@@ -152,10 +172,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     updateUI();
 
-    const today = new Date().toISOString().split("T")[0];
+    const todayStr = new Date().toISOString().split("T")[0];
 
     if (completed.length === items.length) {
-      localStorage.setItem(`mindreset-achieved-${today}`, "true");
+      localStorage.setItem(`mindreset-achieved-${todayStr}`, "true");
+    }
+
+    if (completed.length === items.length) {
+
+      if (!localStorage.getItem(`mindreset-toast-${todayStr}`)) {
+
+        localStorage.setItem(`mindreset-achieved-${todayStr}`, "true");
+        localStorage.setItem(`mindreset-toast-${todayStr}`, "true");
+
+        showGlobalToast({
+          title: "🌿 Mind reset complete!",
+          message: "You completed your reset 💚",
+          tip: "Take a breath… you're doing okay 🌸"
+        });
+
+      }
+
     }
 
     // 🎉 NOW WORKS

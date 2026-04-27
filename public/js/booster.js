@@ -111,13 +111,44 @@ async function loadProgress(type, selector, doneClass) {
   const res = await fetch(`/booster/progress/${type}`);
   const data = await res.json();
 
+  const today = new Date().toISOString().split("T")[0];
+
+  // ✅ RESET if NOT today
+  if (!data.date || data.date !== today) {
+
+    document.querySelectorAll(selector).forEach(card => {
+
+      if (type === "moodlifting") {
+        card.classList.remove("completed", "reflected");
+
+        const tick = card.querySelector(".ml-tick");
+        if (tick) tick.remove();
+      } else {
+        card.classList.remove(doneClass);
+
+        const fill = card.querySelector(".task-bar-fill");
+        if (fill) fill.style.width = "0%";
+
+        const btn = card.querySelector(".task-start-btn");
+        if (btn) {
+          btn.textContent = "Start";
+          btn.disabled = false;
+        }
+      }
+
+    });
+
+    updateProgress(selector, doneClass);
+    return;
+  }
+
   const cards = document.querySelectorAll(selector);
 
   cards.forEach((card, index) => {
 
-    /* =========================================
-       MOOD LIFTING (DO NOT TOUCH - KEEP)
-    ========================================= */
+    /* =========================
+       🌿 MOODLIFTING (SPECIAL)
+    ========================= */
     if (type === "moodlifting") {
 
       if (data.completed.includes(index)) {
@@ -134,25 +165,23 @@ async function loadProgress(type, selector, doneClass) {
 
       } else {
 
-        card.classList.remove("completed");
-        card.classList.remove("reflected");
+        card.classList.remove("completed", "reflected");
 
         const tick = card.querySelector(".ml-tick");
         if (tick) tick.remove();
       }
+
     }
 
-    /* =========================================
-       BODYBOOSTER + MINITASK (THIS IS THE FIX)
-    ========================================= */
+    /* =========================
+       💪 BODYBOOSTER + MINITASK
+    ========================= */
     else {
 
       if (data.completed.includes(index)) {
 
-        // ✅ restore completed state
         card.classList.add(doneClass);
 
-        // OPTIONAL: restore progress bar visually
         const fill = card.querySelector(".task-bar-fill");
         if (fill) fill.style.width = "100%";
 
@@ -175,6 +204,7 @@ async function loadProgress(type, selector, doneClass) {
           btn.disabled = false;
         }
       }
+
     }
 
   });
@@ -346,9 +376,21 @@ async function toggleTask(type, index, selector, doneClass) {
   const total = document.querySelectorAll(selector).length;
 
   if (doneCount === total) {
-    localStorage.setItem(`${type}-achieved-${today}`, "true");
-  }
 
+    // ✅ prevent repeating toast
+    if (!localStorage.getItem(`${type}-toast-${today}`)) {
+
+      localStorage.setItem(`${type}-achieved-${today}`, "true");
+      localStorage.setItem(`${type}-toast-${today}`, "true");
+
+      showGlobalToast({
+        title: "✨ Session complete!",
+        message: "You finished all tasks 💚",
+        tip: "Your butterfly is growing stronger 🦋"
+      });
+
+    }
+  }
 }
 
 /* =========================================================
@@ -383,13 +425,42 @@ function getCurrentPage() {
 function showEncouragement(type) {
 
   const messages = {
-    bodybooster: ["Nice movement! Keep going 💪"],
-    minitask: ["Small wins matter ✨"],
-    moodlifting: ["That matters 💚"],
-    default: ["Your butterfly is growing ✨"]
+    bodybooster: [
+      "Nice movement! Keep going 💪",
+      "Your body thanks you 🧘",
+      "Energy boost unlocked ⚡",
+      "You’re building strength 🌱"
+    ],
+    minitask: [
+      "Small wins matter ✨",
+      "One step at a time 💛",
+      "Progress is progress 🌼",
+      "You showed up today 👏"
+    ],
+    moodlifting: [
+      "That matters 💚",
+      "You chose yourself today 🌸",
+      "A little lift goes a long way 🌈",
+      "Keep nurturing your mood 💫"
+    ],
+    mindreset: [
+      "You gave yourself a reset 🌿",
+      "That pause mattered 💚",
+      "Breathe… you're doing okay 🌸",
+      "You made space for yourself ✨"
+    ],
+    default: [
+      "Your butterfly is growing ✨",
+      "You’re doing better than you think 🦋",
+      "Growth takes time 🌱",
+      "Every step counts 💛"
+    ]
   };
 
-  const msg = (messages[type] || messages.default)[0];
+  const typeMessages = messages[type] || messages.default;
+
+  const msg =
+    typeMessages[Math.floor(Math.random() * typeMessages.length)];
 
   const popup = document.createElement("div");
   popup.className = "xp-popup";
