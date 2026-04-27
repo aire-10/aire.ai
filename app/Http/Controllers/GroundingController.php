@@ -37,7 +37,7 @@ class GroundingController extends Controller
         $today = now()->format('Y-m-d');
 
         $grounding = Grounding::where('user_id', $userId)
-            ->where('date', $today)
+            ->whereDate('date', $today)
             ->first();
 
         if (!$grounding) {
@@ -56,21 +56,25 @@ class GroundingController extends Controller
             $progress['step_inputs'] = $request->inputs;
         }
 
-        // ✅ HANDLE COMPLETED STEPS (ONLY ONCE)
+        // ✅ HANDLE COMPLETED STEPS
         $existingSteps = $grounding->completed_steps_json ?? [];
 
+        // start with existing
+        $mergedSteps = $existingSteps;
+
+        // merge if new steps provided
         if ($request->has('completed_steps')) {
+            $incomingSteps = $request->completed_steps ?? [];
 
-            $incomingSteps = $request->completed_steps;
-
-            $mergedSteps = array_unique(array_merge($existingSteps, $incomingSteps));
-            sort($mergedSteps);
-
-            $grounding->completed_steps_json = $mergedSteps;
-
-            // ALSO STORE IN PROGRESS
-            $progress['completed_steps'] = $mergedSteps;
+            if (is_array($incomingSteps)) {
+                $mergedSteps = array_unique(array_merge($existingSteps, $incomingSteps));
+                sort($mergedSteps);
+            }
         }
+
+        // ✅ ALWAYS SAVE
+        $grounding->completed_steps_json = $mergedSteps;
+        $progress['completed_steps'] = $mergedSteps;
 
         // ✅ ALWAYS UPDATE TIMESTAMP
         $progress['last_updated'] = now()->toDateTimeString();
@@ -82,7 +86,7 @@ class GroundingController extends Controller
         $grounding->completed_steps = count($finalSteps);
         $grounding->total_steps = 5;
 
-        // ✅ AUTO COMPLETE (THIS WAS MISSING)
+        // ✅ AUTO COMPLETE
         if (count($finalSteps) >= 5) {
             $grounding->is_completed = true;
             $grounding->completed_at = now();
@@ -130,7 +134,8 @@ class GroundingController extends Controller
             'completed_steps' => $grounding->completed_steps_json ?? [],
             'step_inputs' => $progress['step_inputs'] ?? [],
             'is_completed' => $grounding->is_completed,
-            'completed_at' => $grounding->completed_at
+            'completed_at' => $grounding->completed_at,
+            'date' => $grounding->date,
         ]);
     }
     

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
 
 class BoosterController extends Controller
 {
@@ -10,10 +12,15 @@ class BoosterController extends Controller
     {
         $user = auth()->user();
 
-        $data = $user->$type ?? ['completed' => []];
+        if (!isset($user->$type) || !is_array($user->$type)) {
+            $data = ['completed' => []];
+        } else {
+            $data = $user->$type;
+        }
 
         return response()->json([
-            'completed' => $data['completed'] ?? []
+            'completed' => $data['completed'] ?? [],
+            'date' => now()->format('Y-m-d')
         ]);
     }
 
@@ -22,9 +29,19 @@ class BoosterController extends Controller
         $type = $req->type;
         $index = $req->index;
 
+        $allowed = ['moodlifting', 'mindreset', 'minitask', 'bodybooster'];
+
+        if (!in_array($type, $allowed)) {
+            return response()->json(['error' => 'Invalid type'], 400);
+        }
+
         $user = auth()->user();
 
-        $data = $user->$type ?? ['completed' => []];
+        if (!isset($user->$type) || !is_array($user->$type)) {
+            $data = ['completed' => []];
+        } else {
+            $data = $user->$type;
+        }
 
         if (in_array($index, $data['completed'])) {
             $data['completed'] = array_values(array_diff($data['completed'], [$index]));
@@ -54,7 +71,11 @@ class BoosterController extends Controller
     {
         $user = auth()->user();
 
-        $data = $user->$type ?? ['completed' => []];
+        if (!isset($user->$type) || !is_array($user->$type)) {
+            $data = ['completed' => []];
+        } else {
+            $data = $user->$type;
+        }
 
         $totalTasks = [
             'moodlifting' => 6,

@@ -163,6 +163,18 @@
 
 </div>
 
+<div class="mood-toast" id="moodToast">
+  <div class="mood-toast-img-wrap">
+    <img id="toastPetImg" src="{{ asset('images/egg.png') }}" />
+  </div>
+  <div class="mood-toast-body">
+    <p id="toastTitle">🌱 Your butterfly is growing!</p>
+    <p id="toastMsg"></p>
+    <p id="toastTip"></p>
+  </div>
+  <button id="toastClose">✕</button>
+</div>
+
 @endsection
 
 @push('scripts')

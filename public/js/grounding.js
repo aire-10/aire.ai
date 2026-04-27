@@ -14,14 +14,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 document.addEventListener("input", () => {
-  if (currentStepIndex !== null) {
+  if (currentStepIndex === null) return;
 
-    // ❌ DO NOT SAVE AFTER FULL COMPLETION
-    if (completedSteps.size === TOTAL_STEPS) return;
+  // ❌ DO NOT SAVE AFTER FULL COMPLETION
+  if (completedSteps.size === TOTAL_STEPS) return;
 
-    // ✅ SAVE INPUT ONLY (TYPING MODE)
-    saveToDatabase(currentStepIndex, false, true);
-  }
+  // ❌ DO NOT SAVE if this step is already completed
+  if (completedSteps.has(currentStepIndex)) return;
+
+  // ✅ SAFE TYPING SAVE
+  saveToDatabase(currentStepIndex, false, true);
 });
 
 let currentStepIndex = null;
@@ -40,7 +42,41 @@ async function loadFromDatabase() {
 
     const data = await res.json();
 
-    if (!data || !data.has_progress) return;
+    const today = new Date().toLocaleDateString('en-CA'); 
+    const apiDate = data.date ? data.date.split("T")[0] : null;
+
+    if (!data || !data.has_progress || apiDate !== today) {
+
+      completedSteps.clear();
+
+      // CLEAR INPUTS
+      for (let i = 0; i < TOTAL_STEPS; i++) {
+        const container = document.getElementById(`inputs-${i}`);
+        if (container) {
+          container.querySelectorAll(".step-input")
+            .forEach(input => input.value = "");
+        }
+      }
+
+      // RESET UI
+      for (let i = 0; i < TOTAL_STEPS; i++) {
+        const step = document.getElementById(`step-${i}`);
+        if (step) {
+          step.classList.remove("done");
+          const icon = step.querySelector(".step-icon");
+          if (icon) icon.textContent = "";
+        }
+
+        const arrow = document.getElementById(`arrow-${i}`);
+        if (arrow) {
+          arrow.textContent = "›";
+          arrow.style.color = "";
+        }
+      }
+
+      updateProgress();
+      return;
+    }
 
     // ✅ RESET FIRST
     completedSteps.clear();
@@ -272,19 +308,16 @@ function updateProgress() {
 
 function showCompletion() {
 
-  const msg = document.getElementById('completion-msg');
-  if (!msg) return;
-
-  msg.classList.add('visible');
-
   const today = new Date().toISOString().split("T")[0];
 
-  // ✅ CONNECT TO GROWTH SYSTEM (OPTION B)
   if (!localStorage.getItem(`grounding-achieved-${today}`)) {
     localStorage.setItem(`grounding-achieved-${today}`, "true");
-  }
 
-  setTimeout(() => {
-    msg.classList.remove('visible');
-  }, 3000);
+    // 🔥 ADD THIS
+    showGlobalToast({
+      title: "🌿 Grounding complete!",
+      message: "You completed your grounding exercise 💚",
+      tip: "Your butterfly feels calmer 🦋"
+    });
+  }
 }

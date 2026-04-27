@@ -5,6 +5,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/grounding.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/booster.css') }}">
     <style>
         body.grounding-page {
             background-image: url('{{ asset("images/landing-butterfly-right.jpeg") }}');
@@ -44,7 +45,19 @@
 </div>
 <div id="focusOverlay" class="focus-overlay hidden"><div class="focus-card"><h2 id="focusTitle">5 Things you see</h2><p class="focus-guide">Take a moment. Gently look around you…</p><div id="focusInputs" class="step-inputs"></div><div style="margin-top:20px;display:flex;gap:12px;justify-content:center;"><button id="focusDoneBtn" class="btn-done-step">Done ✓</button><button id="focusNextBtn" class="btn-ghost">Next →</button></div></div></div>
 <div id="completion-msg" class="completion-msg">🎉 Amazing! You've completed the grounding exercise! 🌿</div>
-<div class="mood-toast" id="moodToast"><div class="mood-toast-body"><p class="mood-toast-title" id="toastTitle"></p><p class="mood-toast-msg" id="toastMsg"></p><p class="mood-toast-tip" id="toastTip"></p></div></div>
+
+<div class="mood-toast" id="moodToast">
+  <div class="mood-toast-img-wrap">
+    <img id="toastPetImg" src="{{ asset('images/egg.png') }}" />
+  </div>
+  <div class="mood-toast-body">
+    <p id="toastTitle">🌱 Your butterfly is growing!</p>
+    <p id="toastMsg"></p>
+    <p id="toastTip"></p>
+  </div>
+  <button id="toastClose">✕</button>
+</div>
+
 @endsection
 
 @push('scripts')

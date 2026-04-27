@@ -396,6 +396,22 @@ const AireData = (() => {
     return stageKey;
   }
 
+  // toast
+  window.showGlobalToast = function ({ title, message, tip }) {
+    const toast = document.getElementById("moodToast");
+    if (!toast) return;
+
+    document.getElementById("toastTitle").textContent = title;
+    document.getElementById("toastMsg").textContent = message;
+    document.getElementById("toastTip").textContent = tip || "";
+
+    toast.classList.add("show");
+
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 3500);
+  }
+
   /* Expose everything - Note: Many functions now return Promises! */
   return {
     logMood,
