@@ -7,7 +7,6 @@
     <title>Airé • @yield('title')</title>
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     @stack('styles')
-    @stack('styles') 
     @stack('head-scripts')
 </head>
 <body class="@yield('body-class')">
@@ -48,7 +47,7 @@
                 <div class="profile-dropdown">
                     <a href="{{ url('/profile') }}">👤 Profile</a>
                     <a href="#" id="hotlineBtn">📞 Hotline</a>
-                    <form method="POST" action="{{ url('/logout') }}">
+                    <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="dropdown-link">🚪 Logout</button>
                     </form>
