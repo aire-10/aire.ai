@@ -8,7 +8,8 @@ class BreathingSession extends Model
 {
     protected $fillable = [
         'user_id',
-        'duration'
+        'duration',
+        'cycles'
     ];
 
     public function user()
