@@ -96,7 +96,7 @@ body.breathing-page {
                         </div>
 
                         <p class="cycle-text">
-                            CYCLE: <span id="cycle">1</span> / <span id="totalCycles">4</span>
+                            CYCLE: <span id="cycle">1</span>
                         </p>
                     </div>
 
