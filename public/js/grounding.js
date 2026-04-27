@@ -8,13 +8,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  // ✅ LOAD ONLY ONCE
   await loadFromDatabase();
 
-document.querySelectorAll(".step-input").forEach(input => {
-  input.addEventListener("input", () => {
-    saveToDatabase(currentStepIndex || 0, false);
-  });
-}); 
+});
+
+document.addEventListener("input", () => {
+  if (currentStepIndex !== null) {
+
+    // ❌ DO NOT SAVE AFTER FULL COMPLETION
+    if (completedSteps.size === TOTAL_STEPS) return;
+
+    // ✅ SAVE INPUT ONLY (TYPING MODE)
+    saveToDatabase(currentStepIndex, false, true);
+  }
 });
 
 let currentStepIndex = null;
@@ -48,13 +55,23 @@ async function loadFromDatabase() {
     const inputs = data.step_inputs || {};
 
     Object.keys(inputs).forEach(stepIndex => {
-      const values = inputs[stepIndex];
+      const container = document.getElementById(`inputs-${stepIndex}`);
+      if (!container) return;
 
-      values.forEach((val, i) => {
-        const input = document.querySelectorAll(`#inputs-${stepIndex} .step-input`)[i];
-        if (input) input.value = val;
+      const inputEls = container.querySelectorAll(".step-input");
+      const values = inputs[stepIndex] || [];
+
+      inputEls.forEach((input, i) => {
+        input.value = values[i] || "";
       });
     });
+
+    // 🔥 FORCE UI consistency
+    for (let i = 0; i < TOTAL_STEPS; i++) {
+      if (completedSteps.has(i)) {
+        markStepDoneUI(i);
+      }
+    }
 
     updateProgress();
 
@@ -63,15 +80,27 @@ async function loadFromDatabase() {
   }
 }
 
-async function saveToDatabase(stepIndex, isCompleted = false) {
+async function saveToDatabase(stepsOrIndex, isCompleted = false, isTyping = false) {
   try {
 
-    const payload = {
-      step_index: stepIndex ?? 0,
+    let payload = {
       inputs: getAllInputs(),
-      completed_steps: Array.from(completedSteps),
       is_completed: isCompleted
     };
+
+    // ✅ HANDLE FULL ARRAY (FROM doneStep)
+    if (Array.isArray(stepsOrIndex)) {
+      payload.step_index = stepsOrIndex[stepsOrIndex.length - 1] ?? 0;
+      payload.completed_steps = stepsOrIndex;
+    } 
+    // ✅ HANDLE TYPING
+    else {
+      payload.step_index = stepsOrIndex ?? 0;
+
+      if (!isTyping) {
+        payload.completed_steps = Array.from(completedSteps);
+      }
+    }
 
     console.log("🔥 SENDING:", payload);
 
@@ -98,7 +127,6 @@ async function saveToDatabase(stepIndex, isCompleted = false) {
     console.error("❌ save grounding error:", err);
   }
 }
-
 /* =========================
    🎯 FOCUS MODE (RESTORED)
 ========================= */
@@ -184,7 +212,11 @@ function toggleStep(index) {
 function doneStep(e, index) {
   if (e) e.stopPropagation();
 
+  // ✅ ADD STEP FIRST
   completedSteps.add(index);
+
+  // 🔥 FORCE ALL STEPS INTO ARRAY BEFORE SAVE
+  const allSteps = Array.from(completedSteps);
 
   markStepDoneUI(index);
 
@@ -192,7 +224,8 @@ function doneStep(e, index) {
 
   const isCompleted = completedSteps.size === TOTAL_STEPS;
 
-  saveToDatabase(index, isCompleted);
+  // ✅ SEND FULL ARRAY (FIX)
+  saveToDatabase(allSteps, isCompleted);
 
   if (isCompleted) showCompletion();
 }

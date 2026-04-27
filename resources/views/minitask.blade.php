@@ -35,7 +35,7 @@
         <div class="task-card">
             <div class="task-row">
                 <span class="task-leaf">🌿</span>
-                <span class="task-text">Take 3 slow breaths</span>
+                <span class="task-text">Take deep and slow breaths</span>
             </div>
             <div class="task-progress">
             <div class="task-bar">
@@ -49,7 +49,7 @@
         <div class="task-card">
             <div class="task-row">
                 <span class="task-leaf">🌿</span>
-                <span class="task-text">Roll your shoulders back 10x</span>
+                <span class="task-text">Roll your shoulders back</span>
             </div>
             <div class="task-progress">
             <div class="task-bar">
@@ -63,7 +63,7 @@
         <div class="task-card">
             <div class="task-row">
                 <span class="task-leaf">🌿</span>
-                <span class="task-text">Raise & relax your eyebrows 5x</span>
+                <span class="task-text">Raise & relax your eyebrows for 10 seconds</span>
             </div>
             <div class="task-progress">
             <div class="task-bar">
@@ -77,7 +77,7 @@
         <div class="task-card">
             <div class="task-row">
                 <span class="task-leaf">🌿</span>
-                <span class="task-text">Blink slowly 5x</span>
+                <span class="task-text">Blink slowly for 10 seconds</span>
             </div>
             <div class="task-progress">
             <div class="task-bar">
