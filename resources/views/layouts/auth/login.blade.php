@@ -33,8 +33,7 @@
             <input type="checkbox" />
             <span>Remember me</span>
           </label>
-
-          <a class="auth-link" href="{{ url('forgot-password') }}">Forgot password?</a>
+          
         </div>
 
         <button type="submit" class="auth-btn">Login</button>
