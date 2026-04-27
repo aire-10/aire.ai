@@ -29,37 +29,71 @@ class GroundingController extends Controller
         $request->validate([
             'step_index' => 'required|integer|min:0|max:4',
             'inputs' => 'nullable|array',
-            'completed_steps' => 'required|array',
+            'completed_steps' => 'nullable|array',
             'is_completed' => 'boolean'
         ]);
 
         $userId = Auth::id() ?? 1;
         $today = now()->format('Y-m-d');
 
-        $grounding = Grounding::firstOrNew([
-            'user_id' => $userId,
-            'date' => $today
-        ]);
+        $grounding = Grounding::where('user_id', $userId)
+            ->where('date', $today)
+            ->first();
+
+        if (!$grounding) {
+            $grounding = new Grounding();
+            $grounding->user_id = $userId;
+            $grounding->date = $today;
+        }
 
         // ✅ FIX: SET REQUIRED FIELD
         $grounding->exercise_type = '5-4-3-2-1';
 
         $progress = $grounding->progress ?? [];
 
-        $progress['step_inputs'] = $request->inputs ?? [];
-        $progress['completed_steps'] = $request->completed_steps;
+        // ✅ SAVE INPUTS
+        if ($request->has('inputs')) {
+            $progress['step_inputs'] = $request->inputs;
+        }
+
+        // ✅ HANDLE COMPLETED STEPS (ONLY ONCE)
+        $existingSteps = $grounding->completed_steps_json ?? [];
+
+        if ($request->has('completed_steps')) {
+
+            $incomingSteps = $request->completed_steps;
+
+            $mergedSteps = array_unique(array_merge($existingSteps, $incomingSteps));
+            sort($mergedSteps);
+
+            $grounding->completed_steps_json = $mergedSteps;
+
+            // ALSO STORE IN PROGRESS
+            $progress['completed_steps'] = $mergedSteps;
+        }
+
+        // ✅ ALWAYS UPDATE TIMESTAMP
         $progress['last_updated'] = now()->toDateTimeString();
 
         $grounding->progress = $progress;
-        $grounding->completed_steps = count($request->completed_steps);
-        $grounding->completed_steps_json = $request->completed_steps;
-        $grounding->total_steps = 5;
-        $grounding->is_completed = $request->is_completed ?? false;
 
-        if ($request->is_completed) {
+        $finalSteps = $grounding->completed_steps_json ?? [];
+
+        $grounding->completed_steps = count($finalSteps);
+        $grounding->total_steps = 5;
+
+        // ✅ AUTO COMPLETE (THIS WAS MISSING)
+        if (count($finalSteps) >= 5) {
+            $grounding->is_completed = true;
             $grounding->completed_at = now();
         }
-        
+
+        // ✅ DO NOT OVERWRITE TRUE WITH FALSE
+        if ($request->has('is_completed') && $request->is_completed) {
+            $grounding->is_completed = true;
+            $grounding->completed_at = now();
+        }
+
         $grounding->save();
 
         return response()->json([
@@ -169,16 +203,14 @@ class GroundingController extends Controller
         ]);
         
         $progress = $grounding->progress ?? [];
-        
-        // Initialize step inputs array if not exists
+
         if (!isset($progress['step_inputs'])) {
             $progress['step_inputs'] = [];
         }
-        
-        // Save inputs for this step
+
         $progress['step_inputs'][$request->step_index] = $request->inputs;
         $progress['last_updated'] = now()->toDateTimeString();
-        
+
         $grounding->progress = $progress;
         
         if ($request->step_completed) {
@@ -201,7 +233,7 @@ class GroundingController extends Controller
         
         return response()->json([
             'success' => true,
-            'completed_steps' => json_decode($grounding->completed_steps_json, true) ?? [],
+            'completed_steps' => $grounding->completed_steps_json ?? [],
             'is_completed' => $grounding->is_completed
         ]);
     }
