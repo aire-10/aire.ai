@@ -61,7 +61,7 @@
 
         <div class="kpi-row">
             <div class="kpi-card"><strong><span id="pkStreak">{{ $streak }}</span></strong><br><small>🔥 STREAK</small></div>
-            <div class="kpi-card"><strong><span id="pkDays">{{ $daysTracked }}</span></strong><br><small>📅 DAYS TRACKED</small></div>
+            <div class="kpi-card"><strong><span id="pkDays">{{ $daysTracked }}</span></strong><br><small>📅 MOODS TRACKED</small></div>
             <div class="kpi-card"><strong><span id="pkToday">{{ $todayCheckIns }}</span></strong><br><small>✅ TODAY</small></div>
             <div class="kpi-card"><strong><span id="pkMood">{{ $latestMood ?? '—' }}</span></strong><br><small>😊 LATEST MOOD</small></div>
         </div>
