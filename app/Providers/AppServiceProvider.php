@@ -5,6 +5,7 @@ namespace App\Providers;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -15,7 +16,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // ✅ Force HTTPS in production (ADD THIS)
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
+
+        // ✅ Keep your existing logic
+        $this->configureDefaults();
     }
 
     /**
