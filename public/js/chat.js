@@ -166,7 +166,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ============================================================
-  // SEND MESSAGE (BACKEND)
+  // SEND MESSAGE (BACKEND) - UPDATED WITH BETTER ERROR HANDLING
   // ============================================================
   async function sendUserText(text) {
     const trimmed = text.trim();
@@ -181,7 +181,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
           message: trimmed,
@@ -189,14 +190,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         })
       });
 
-      const data = await res.json();
+      if (!res.ok) {
+        console.error('Chat error:', res.status, await res.text());
+        throw new Error(`HTTP ${res.status}`);
+      }
 
+      const data = await res.json();
       hideTyping();
       addMessage("bot", data.reply);
 
     } catch (err) {
+      console.error("Chat send error:", err);
       hideTyping();
-      addMessage("bot", "🌸 Something went wrong. Try again.");
+      addMessage("bot", "🌸 Sorry, I'm having trouble connecting. Please try again. 💚");
     }
   }
 
@@ -271,7 +277,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await fetch(`/history/session/${activeId}`, {
         method: "DELETE",
         headers: {
-          "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         }
       });
 
