@@ -49,21 +49,21 @@
 <main class="pet-page">
     <div class="hero-container">
         <div class="pet-visual">
-            <img id="petImg" src="{{ asset('images/' . $stage['img']) }}" alt="Pet Stage" style="width: 120px;">
-            <h2 id="petStageLabel" style="margin-top: 10px; color: {{ $stage['color'] }}">{{ $stage['label'] }}</h2>
+            <img id="petImg" src="{{ asset('images/egg.png') }}" style="width:120px;">
+            <h2 id="petStageLabel" style="margin-top:10px; color:#8a7060">Egg 🥚</h2>
         </div>
 
         <div class="xp-bar-container">
-            <div id="petXpFill" class="xp-fill" style="width: {{ ($growthPoints / ($stage['xpMax'] ?? 10)) * 100 }}%; background: {{ $stage['color'] }}"></div>
-            <span id="petXpText" style="position: absolute; width: 100%; left: 0; top: 2px; font-weight: bold;">{{ $growthPoints }} / {{ $stage['xpMax'] }} pts</span>
+            <div id="petXpFill" class="xp-fill" style="width: 0%;"></div>
+            <span id="petXpText" style="position: absolute; width: 100%; left: 0; top: 2px; font-weight: bold;">0 / 10 pts</span>
         </div>
         <p id="petXpHint" style="font-size: 0.9rem; color: #555;">Loading progress...</p>
 
         <div class="kpi-row">
-            <div class="kpi-card"><strong><span id="pkStreak">{{ $streak }}</span></strong><br><small>🔥 STREAK</small></div>
-            <div class="kpi-card"><strong><span id="pkDays">{{ $daysTracked }}</span></strong><br><small>📅 MOODS TRACKED</small></div>
-            <div class="kpi-card"><strong><span id="pkToday">{{ $todayCheckIns }}</span></strong><br><small>✅ TODAY</small></div>
-            <div class="kpi-card"><strong><span id="pkMood">{{ $latestMood ?? '—' }}</span></strong><br><small>😊 LATEST MOOD</small></div>
+            <div class="kpi-card"><strong><span id="pkStreak">0</span></strong><br><small>🔥 STREAK</small></div>
+            <div class="kpi-card"><strong><span id="pkDays">0</span></strong><br><small>📅 MOODS TRACKED</small></div>
+            <div class="kpi-card"><strong><span id="pkToday">0</span></strong><br><small>✅ TODAY</small></div>
+            <div class="kpi-card"><strong><span id="pkMood">—</span></strong><br><small>😊 LATEST MOOD</small></div>
         </div>
     </div>
 

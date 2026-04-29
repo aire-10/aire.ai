@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!activeId) {
     const res = await fetch('/history/session', {
       method: 'POST',
+      credentials: "include", 
       headers: {
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
       }
@@ -46,7 +47,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ============================================================
   async function loadChatFromServer(sessionId) {
     try {
-      const res = await fetch(`/history/session/${sessionId}`);
+      const res = await fetch(`/history/session/${sessionId}`, {
+        credentials: "include"
+      });
 
       if (!res.ok) {
         console.warn("Session not found, starting fresh");
@@ -179,6 +182,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const res = await fetch('/chat', {
         method: 'POST',
+        credentials: "include",
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
@@ -276,6 +280,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       await fetch(`/history/session/${activeId}`, {
         method: "DELETE",
+        credentials: "include",
         headers: {
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         }

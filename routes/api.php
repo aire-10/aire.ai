@@ -22,7 +22,7 @@ use App\Http\Controllers\API\AireDataController;
 Route::post('/breathing', [BreathingController::class, 'store']);
 
 // GROUP ALL API ROUTES
-Route::group([], function () {
+Route::middleware(['web', 'auth'])->group(function () {
 
     // ======================
     // AIRE DATA (MOOD)
@@ -48,6 +48,7 @@ Route::group([], function () {
         Route::post('/step-inputs', [GroundingController::class, 'saveStepInputs']);
         Route::delete('/reset', [GroundingController::class, 'resetProgress']);
         Route::get('/history', [GroundingController::class, 'getHistory']);
+        Route::get('/check', [GroundingController::class, 'checkToday']);
     });
 
     // ======================
@@ -120,5 +121,10 @@ Route::group([], function () {
     // BREATHING (NEW)
     // ======================
     Route::get('/breathing/weekly-cycles', [BreathingController::class, 'getWeeklyCycles']);
+
+    // ======================
+    // BOOSTERS
+    // ======================
+    Route::post('/booster/reset/{type}', [BoosterController::class, 'reset'])->middleware('auth');
 
 }); // ✅ ONLY ONE closing bracket

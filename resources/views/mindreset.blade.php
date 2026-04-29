@@ -110,7 +110,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentIndex = null;
 
   /* LOAD BACKEND */
-  const res = await fetch('/booster/progress/mindreset');
+  const res = await fetch('/booster/progress/mindreset', {
+    credentials: "include"
+  });
   const data = await res.json();
 
   const today = new Date().toISOString().split("T")[0];
@@ -156,6 +158,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await fetch('/booster/toggle', {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
         "X-CSRF-TOKEN": "{{ csrf_token() }}"
@@ -230,6 +233,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await fetch('/booster/reset/mindreset', {
       method: "POST",
+      credentials: "include", 
       headers: {
         "X-CSRF-TOKEN": "{{ csrf_token() }}"
       }

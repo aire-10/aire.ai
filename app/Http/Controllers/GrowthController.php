@@ -8,6 +8,7 @@ use App\Models\Grounding;
 use App\Models\MoodBooster;
 use App\Models\MiniTask;
 use App\Models\MindReset;
+use App\Models\UserStat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -38,9 +39,17 @@ class GrowthController extends Controller
             'moodlifting' => $this->hasMoodLiftingToday($userId, $today),
         ];
         
-        // Get streak
-        $streak = $this->calculateStreak($userId);
-        
+        // Get growth points and stage
+        $stats = UserStat::firstOrCreate([
+            'user_id' => $userId
+        ]);
+
+        $streak = $stats->streak;
+        $growthPoints = $stats->points;
+        $stage = [
+            'stageKey' => $stats->stage
+        ];
+
         // Get days tracked
         $daysTracked = $this->getDaysTracked($userId);
         
@@ -50,14 +59,9 @@ class GrowthController extends Controller
         // Get latest mood
         $latestMood = $this->getLatestMood($userId);
         
-        // Get growth points (cumulative)
-        $growthPoints = $this->getGrowthPoints($userId);
-        
-        // Calculate stage based on points
-        $stage = $this->calculateStage($growthPoints, $streak);
         
         return view('growth', [
-                'moodLog' => $this->getMoodLog($userId),
+                'moodLog' => $moodLog,
                 'completedActions' => $completedActions,
                 'streak' => $streak,
                 'daysTracked' => $daysTracked,
@@ -198,29 +202,6 @@ class GrowthController extends Controller
             ->exists();
     }
     
-    // Calculate current streak
-    private function calculateStreak($userId)
-    {
-        $streak = 0;
-        $currentDate = now()->toDateString();
-        
-        // Get all mood entries grouped by date
-        $moodDates = Mood::where('user_id', $userId)
-            ->select(DB::raw('DATE(created_at) as date'))
-            ->distinct()
-            ->orderBy('date', 'desc')
-            ->pluck('date')
-            ->toArray();
-        
-        // Check consecutive days
-        $checkDate = $currentDate;
-        while (in_array($checkDate, $moodDates)) {
-            $streak++;
-            $checkDate = date('Y-m-d', strtotime($checkDate . ' -1 day'));
-        }
-        
-        return $streak;
-    }
     
     // Get total days user has tracked mood
     private function getDaysTracked($userId)
@@ -253,75 +234,6 @@ class GrowthController extends Controller
         return null;
     }
     
-    // Calculate total growth points
-    private function getGrowthPoints($userId)
-    {
-        $points = 0;
-        
-        // Journal entries: +1 point per journal
-        $journalCount = Journal::where('user_id', $userId)->count();
-        $points += $journalCount;
-        
-        // Positive moods: +1 point per positive mood
-        $positiveMoods = Mood::where('user_id', $userId)
-            ->whereIn('mood_level', [6, 7, 8, 9, 10])
-            ->count();
-        $points += $positiveMoods;
-        
-        // Grounding exercises: +0.5 points each
-        $groundingCount = Grounding::where('user_id', $userId)->count();
-        $points += $groundingCount * 0.5;
-        
-        // Mood boosters: +0.5 points each
-        $boosterCount = MoodBooster::where('user_id', $userId)->count();
-        $points += $boosterCount * 0.5;
-        
-        // Completed mini tasks: +0.5 points each
-        $taskCount = MiniTask::where('user_id', $userId)
-            ->whereNotNull('completed_at')
-            ->count();
-        $points += $taskCount * 0.5;
-        
-        // Mind resets: +0.5 points each
-        $resetCount = MindReset::where('user_id', $userId)
-            ->where('completed', true)
-            ->count();
-        $points += $resetCount * 0.5;
-        
-        return round($points, 1);
-    }
-    
-    // Calculate stage based on points and streak
-
-    private function calculateStage($points, $streak)
-    {
-        // Fetch recent moods to check for decline
-        $recentMoods = Mood::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
-
-        $negativeCount = $recentMoods->filter(fn($m) => $m->mood_level <= 3)->count();
-        $hasReachedButterfly = $points >= 50;
-
-        if ($hasReachedButterfly && $negativeCount >= 2) {
-            return ['stageKey' => 'struggling', 'label' => 'Struggling 💔', 'img' => 'struggling.jpeg', 'color' => '#a07070', 'xpMax' => 2];
-        } 
-        if ($hasReachedButterfly && $negativeCount >= 1) {
-            return ['stageKey' => 'surviving', 'label' => 'Surviving 🌱', 'img' => 'surviving.jpeg', 'color' => '#b0a060', 'xpMax' => 3];
-        }
-        if ($points >= 50) {
-            return ['stageKey' => 'butterfly', 'label' => 'Butterfly 🦋', 'img' => 'adult_glow.png', 'color' => '#3a8c3a', 'xpMax' => 100];
-        } 
-        if ($points >= 30) {
-            return ['stageKey' => 'pupa', 'label' => 'Pupa 🦋', 'img' => 'pupa.png', 'color' => '#4c7a60', 'xpMax' => 50];
-        } 
-        if ($points >= 10) {
-            return ['stageKey' => 'caterpillar', 'label' => 'Caterpillar 🐛', 'img' => 'caterpillar.png', 'color' => '#7aab72', 'xpMax' => 30];
-        }
-
-        return ['stageKey' => 'egg', 'label' => 'Egg 🥚', 'img' => 'egg.png', 'color' => '#8a7060', 'xpMax' => 10];
-    }
         
     // API endpoint to record an action completion
     public function recordAction(Request $request)
@@ -340,13 +252,19 @@ class GrowthController extends Controller
         session()->put('completed_actions', $completed);
         
         // Recalculate growth points
-        $points = $this->getGrowthPoints($userId);
+        $stats = \App\Models\UserStat::firstOrCreate([
+            'user_id' => $userId
+        ]);
+
+        $points = $stats->points;
         
         return response()->json([
             'success' => true,
             'message' => 'Action recorded!',
             'points' => $points,
-            'stage' => $this->calculateStage($points, $this->calculateStreak($userId))
+            'stage' => [
+                'stageKey' => $stats->stage
+            ]
         ]);
     }
     
@@ -354,18 +272,25 @@ class GrowthController extends Controller
     public function getData()
     {
         $userId = Auth::id();
-        
+
+        // ✅ MOVE THIS HERE
+        $stats = \App\Models\UserStat::firstOrCreate([
+            'user_id' => $userId
+        ]);
+
         return response()->json([
             'moodLog' => $this->getMoodLog($userId),
-            'streak' => $this->calculateStreak($userId),
+            'streak' => $stats->streak,
             'daysTracked' => $this->getDaysTracked($userId),
             'todayCheckIns' => $this->getTodayCheckInCount($userId, now()->toDateString()),
             'latestMood' => $this->getLatestMood($userId),
-            'growthPoints' => $this->getGrowthPoints($userId),
-            'stage' => $this->calculateStage(
-                $this->getGrowthPoints($userId),
-                $this->calculateStreak($userId)
-            ),
+
+            // ✅ USE STATS
+            'growthPoints' => $stats->points,
+            'stage' => [
+                'stageKey' => $stats->stage
+            ],
+
             'completedActions' => [
                 'journal' => $this->hasJournalToday($userId, now()->toDateString()),
                 'mood' => $this->hasMoodToday($userId, now()->toDateString()),
@@ -377,7 +302,7 @@ class GrowthController extends Controller
             ]
         ]);
     }
-    
+        
     // Get mood chart data
     public function getMoodChartData()
     {

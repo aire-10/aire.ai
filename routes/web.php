@@ -20,6 +20,7 @@ use App\Http\Controllers\MoodController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BreathingController;
 use App\Http\Controllers\BoosterController;
+use App\Http\Controllers\StatsController;
 
 // ==============================================
 // PUBLIC ROUTES (No authentication required)
@@ -140,6 +141,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/history/stats', [HistoryController::class, 'getStats'])->name('history.stats');
     Route::post('/history/message', [HistoryController::class, 'saveMessage'])->name('history.message');
 
+    // =====================
+    // GROWTH STATS
+    // =====================
+    Route::get('/api/stats', [StatsController::class, 'getStats']);
+    Route::post('/api/stats/update', [StatsController::class, 'updateStats']);
+
+    Route::get('/api/mood-log', [MoodController::class, 'getMoodLog'])
+        ->middleware('auth');
+    Route::get('/growth/data', [GrowthController::class, 'getData'])->middleware('auth');
 });
 
 require __DIR__.'/settings.php';

@@ -31,7 +31,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function fetchSessions() {
     try {
-      const res = await fetch('/history/sessions');
+      const res = await fetch('/history/sessions', {
+        credentials: "include"
+      });
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       return data.sessions || [];
@@ -89,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function deleteSession(id) {
     await fetch(`/history/session/${id}`, {
       method: "DELETE",
+      credentials: "include",
       headers: {
         "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
       }
