@@ -43,7 +43,7 @@
         </div>
     </div>
 </div>
-<div id="focusOverlay" class="focus-overlay hidden"><div class="focus-card"><h2 id="focusTitle">5 Things you see</h2><p class="focus-guide">Take a moment. Gently look around you…</p><div id="focusInputs" class="step-inputs"></div><div style="margin-top:20px;display:flex;gap:12px;justify-content:center;"><button id="focusDoneBtn" class="btn-done-step">Done ✓</button><button id="focusNextBtn" class="btn-ghost">Next →</button></div></div></div>
+<div id="focusOverlay" class="focus-overlay hidden"><div class="focus-card"><h2 id="focusTitle">5 Things you see</h2><p class="focus-guide">Take a moment. Gently look around you…</p><div id="focusInputs" class="step-inputs"></div><div style="margin-top:20px;display:flex;gap:12px;justify-content:center;"><button id="focusDoneBtn" class="btn-done-step">Done ✓</button></div></div></div>
 <div id="completion-msg" class="completion-msg">🎉 Amazing! You've completed the grounding exercise! 🌿</div>
 
 <div class="mood-toast" id="moodToast">
