@@ -37,6 +37,7 @@ const completedSteps = new Set();
 async function loadFromDatabase() {
   try {
     const res = await fetch('/api/grounding/progress', {
+      credentials: 'include',
       headers: { "Accept": "application/json" }
     });
 
@@ -141,14 +142,14 @@ async function saveToDatabase(stepsOrIndex, isCompleted = false, isTyping = fals
     console.log("🔥 SENDING:", payload);
 
     const res = await fetch('/api/grounding/progress', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-      },
-      body: JSON.stringify(payload)
-    });
+    method: 'POST',
+    credentials: 'include', // ✅ ADD THIS
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+    },
+    body: JSON.stringify(payload)
+  });
 
     const text = await res.text();
 
@@ -264,6 +265,8 @@ function doneStep(e, index) {
   saveToDatabase(allSteps, isCompleted);
 
   if (isCompleted) showCompletion();
+
+    window.dispatchEvent(new Event("aire:mood-logged"));
 }
 
 function markStepDoneUI(index) {
@@ -306,18 +309,34 @@ function updateProgress() {
     `${done} / ${TOTAL_STEPS} complete`;
 }
 
-function showCompletion() {
+async function showCompletion() {
 
   const today = new Date().toISOString().split("T")[0];
 
-  if (!localStorage.getItem(`grounding-achieved-${today}`)) {
-    localStorage.setItem(`grounding-achieved-${today}`, "true");
+  if (localStorage.getItem(`grounding-toast-${today}`)) return;
 
-    // 🔥 ADD THIS
-    showGlobalToast({
-      title: "🌿 Grounding complete!",
-      message: "You completed your grounding exercise 💚",
-      tip: "Your butterfly feels calmer 🦋"
+  // ✅ SMALL DELAY (IMPORTANT)
+  await new Promise(r => setTimeout(r, 300));
+
+  try {
+    const res = await fetch('/api/grounding/check', {
+      credentials: 'include'
     });
+    const data = await res.json();
+
+    if (data.completed) {
+
+      localStorage.setItem(`grounding-toast-${today}`, "true");
+
+      showGlobalToast({
+        title: "🌿 Grounding complete!",
+        message: "You completed your grounding exercise 💚",
+        tip: "Your butterfly feels calmer 🦋"
+      });
+
+    }
+
+  } catch (err) {
+    console.error("❌ completion check error:", err);
   }
 }

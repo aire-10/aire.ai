@@ -7,6 +7,7 @@ use App\Models\Journal;
 use App\Models\MiniTask;
 use App\Models\Grounding;
 use App\Models\MoodBooster;
+use App\Models\UserStat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -43,10 +44,14 @@ class HomeController extends Controller
     {
         $userId = Auth::id();
         
-        // Get user stats
-        $streak = $this->calculateStreak($userId);
+        $stats = UserStat::firstOrCreate([
+            'user_id' => $userId
+        ]);
+
+        $streak = $stats->streak;
+        $stageKey = $stats->stage;
+        $growthPoints = $stats->points;
         $daysTracked = $this->getDaysTracked($userId);
-        $stageKey = $this->calculateStageKey($userId);
         
         // Get today's mood
         $todayMood = Mood::where('user_id', $userId)
@@ -82,8 +87,6 @@ class HomeController extends Controller
         // Get weekly mood data for chart
         $weeklyMoods = $this->getWeeklyMoodData($userId);
         
-        // Get growth points
-        $growthPoints = $this->getGrowthPoints($userId);
         
         // Get affirmation for today
         $affirmation = $this->getDailyAffirmation();
@@ -129,9 +132,13 @@ class HomeController extends Controller
             'created_at' => now()
         ]);
         
+        app(\App\Http\Controllers\StatsController::class)->updateStats();
+        
         // Get updated stats
-        $streak = $this->calculateStreak($userId);
-        $stageKey = $this->calculateStageKey($userId);
+        $stats = \App\Models\UserStat::where('user_id', $userId)->first();
+
+        $streak = $stats->streak;
+        $stageKey = $stats->stage;
         $stageLabel = $this->getStageLabel($stageKey);
         $stageMessage = $this->getStageMessage($stageKey);
         $stageImage = $this->getStageImage($stageKey);
@@ -162,9 +169,11 @@ class HomeController extends Controller
     {
         $userId = Auth::id();
         
-        $streak = $this->calculateStreak($userId);
+        $stats = \App\Models\UserStat::where('user_id', $userId)->first();
+
+        $streak = $stats->streak;
+        $stageKey = $stats->stage;
         $daysTracked = $this->getDaysTracked($userId);
-        $stageKey = $this->calculateStageKey($userId);
         
         return response()->json([
             'success' => true,

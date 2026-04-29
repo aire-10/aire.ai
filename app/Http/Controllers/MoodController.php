@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Mood;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\StatsController;
 
 class MoodController extends Controller
 {
@@ -24,6 +25,9 @@ class MoodController extends Controller
             'date' => now()->toDateString()
         ]);
 
+        // Growth logic
+        app(\App\Http\Controllers\StatsController::class)->updateStats();
+
         return response()->json([
             'message' => 'Mood saved',
             'data' => $mood
@@ -38,6 +42,32 @@ class MoodController extends Controller
             ->get();
 
         return view('moodtracker', compact('moods'));
+    }
+
+    public function getMoodLog()
+    {
+        $userId = Auth::id();
+
+        return Mood::where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($mood) {
+                return [
+                    'date' => $mood->created_at->toDateString(),
+
+                    'mood' => match(true) {
+                        $mood->mood_level >= 9 => 'joyful',
+                        $mood->mood_level >= 7 => 'happy',
+                        $mood->mood_level >= 6 => 'content',
+                        $mood->mood_level >= 5 => 'neutral',
+                        $mood->mood_level >= 3 => 'tired',
+                        default => 'sad'
+                    },
+                    
+                    'note' => $mood->notes ?? '',
+                    'created_at' => $mood->created_at
+                ];
+            });
     }
 
     // Map mood name to numeric level

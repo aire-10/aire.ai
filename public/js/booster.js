@@ -55,6 +55,7 @@ async function initBooster(type, selector, doneClass) {
 
     await fetch(`/booster/reset/${type}`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
       }
@@ -108,7 +109,9 @@ async function initBooster(type, selector, doneClass) {
    ========================================================= */
 async function loadProgress(type, selector, doneClass) {
 
-  const res = await fetch(`/booster/progress/${type}`);
+  const res = await fetch(`/booster/progress/${type}`, {
+    credentials: "include"
+  });
   const data = await res.json();
 
   const today = new Date().toISOString().split("T")[0];
@@ -288,6 +291,7 @@ async function toggleTask(type, index, selector, doneClass) {
 
   const res = await fetch(`/booster/toggle`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
@@ -490,7 +494,9 @@ function showSparkles() {
    ========================================================= */
 async function checkGrowth(type) {
 
-  const res = await fetch(`/booster/check/${type}`);
+  const res = await fetch(`/booster/check/${type}`, {
+    credentials: "include"
+  });
   const data = await res.json();
 
   const today = new Date().toISOString().split("T")[0];

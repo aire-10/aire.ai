@@ -75,4 +75,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(MindReset::class);
     }
+
+    public function stats()
+    {
+        return $this->hasOne(UserStat::class);
+    }
 }

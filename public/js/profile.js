@@ -3,7 +3,9 @@ async function renderRecentChats(limit = 3) {
   if (!listEl) return;
 
   try {
-    const res = await fetch('/history/sessions');
+    const res = await fetch('/history/sessions', {
+      credentials: "include"
+    });
     const data = await res.json();
 
     const sessions = data.sessions || [];

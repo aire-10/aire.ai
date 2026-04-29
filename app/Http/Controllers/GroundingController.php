@@ -33,7 +33,7 @@ class GroundingController extends Controller
             'is_completed' => 'boolean'
         ]);
 
-        $userId = Auth::id() ?? 1;
+        $userId = Auth::id();
         $today = now()->format('Y-m-d');
 
         $grounding = Grounding::where('user_id', $userId)
@@ -46,7 +46,6 @@ class GroundingController extends Controller
             $grounding->date = $today;
         }
 
-        // ✅ FIX: SET REQUIRED FIELD
         $grounding->exercise_type = '5-4-3-2-1';
 
         $progress = $grounding->progress ?? [];
@@ -56,13 +55,10 @@ class GroundingController extends Controller
             $progress['step_inputs'] = $request->inputs;
         }
 
-        // ✅ HANDLE COMPLETED STEPS
+        // ✅ MERGE STEPS
         $existingSteps = $grounding->completed_steps_json ?? [];
-
-        // start with existing
         $mergedSteps = $existingSteps;
 
-        // merge if new steps provided
         if ($request->has('completed_steps')) {
             $incomingSteps = $request->completed_steps ?? [];
 
@@ -72,37 +68,40 @@ class GroundingController extends Controller
             }
         }
 
-        // ✅ ALWAYS SAVE
+        // ✅ SAVE STEPS
         $grounding->completed_steps_json = $mergedSteps;
         $progress['completed_steps'] = $mergedSteps;
 
-        // ✅ ALWAYS UPDATE TIMESTAMP
         $progress['last_updated'] = now()->toDateTimeString();
-
         $grounding->progress = $progress;
 
-        $finalSteps = $grounding->completed_steps_json ?? [];
+        // 🔥 FIXED VARIABLE
+        $finalSteps = $mergedSteps;
 
         $grounding->completed_steps = count($finalSteps);
         $grounding->total_steps = 5;
 
-        // ✅ AUTO COMPLETE
-        if (count($finalSteps) >= 5) {
+        // ✅ COMPLETE ONLY ONCE
+        if (count($finalSteps) >= 5 && !$grounding->is_completed) {
+            $grounding->is_completed = true;
+            $grounding->completed_at = now();
+
+            app(\App\Http\Controllers\StatsController::class)->updateStats();
+        }
+
+        // fallback from frontend
+        if ($request->boolean('is_completed')) {
             $grounding->is_completed = true;
             $grounding->completed_at = now();
         }
 
-        // ✅ DO NOT OVERWRITE TRUE WITH FALSE
-        if ($request->has('is_completed') && $request->is_completed) {
-            $grounding->is_completed = true;
-            $grounding->completed_at = now();
-        }
-
+        // 💾 SAVE
         $grounding->save();
 
         return response()->json([
             'success' => true,
-            'completed' => $grounding->is_completed
+            'completed' => $grounding->is_completed,
+            'completed_steps' => $mergedSteps
         ]);
     }
     
@@ -111,7 +110,7 @@ class GroundingController extends Controller
      */
     public function getProgress()
     {
-        $userId = Auth::id() ?? 1;
+        $userId = Auth::id();
         $today = now()->format('Y-m-d');
 
         $grounding = Grounding::where('user_id', $userId)
@@ -144,7 +143,7 @@ class GroundingController extends Controller
      */
     public function checkTodayCompletion()
     {
-        $userId = Auth::id() ?? 1;
+        $userId = Auth::id();
         $today = now()->format('Y-m-d');
         
         $completed = Grounding::where('user_id', $userId)
@@ -163,7 +162,7 @@ class GroundingController extends Controller
      */
     public function getStats()
     {
-        $userId = Auth::id() ?? 1;
+        $userId = Auth::id();
         
         $totalCompletions = Grounding::where('user_id', $userId)
             ->where('is_completed', true)
@@ -196,50 +195,89 @@ class GroundingController extends Controller
         $request->validate([
             'step_index' => 'required|integer|min:0|max:4',
             'inputs' => 'nullable|array',
-            'step_completed' => 'boolean'
+            'step_completed' => 'boolean',
+            'is_completed' => 'boolean'
         ]);
-        
-        $userId = Auth::id() ?? 1;
-        $today = now()->format('Y-m-d');
-        
+
+        $userId = Auth::id();
+        $today = now()->toDateString();
+
         $grounding = Grounding::firstOrNew([
             'user_id' => $userId,
             'date' => $today
         ]);
-        
+
+        // ✅ ALWAYS set required field
+        $grounding->exercise_type = '5-4-3-2-1';
+
+        // --------------------------
+        // 🧠 HANDLE PROGRESS
+        // --------------------------
         $progress = $grounding->progress ?? [];
 
         if (!isset($progress['step_inputs'])) {
             $progress['step_inputs'] = [];
         }
 
-        $progress['step_inputs'][$request->step_index] = $request->inputs;
-        $progress['last_updated'] = now()->toDateTimeString();
+        // save inputs
+        if ($request->has('inputs')) {
+            $progress['step_inputs'][$request->step_index] = $request->inputs;
+        }
 
+        $progress['last_updated'] = now()->toDateTimeString();
         $grounding->progress = $progress;
-        
-        if ($request->step_completed) {
-            $completedSteps = $grounding->completed_steps_json ?? [];
+
+        // --------------------------
+        // ✅ HANDLE COMPLETED STEPS
+        // --------------------------
+        $completedSteps = $grounding->completed_steps_json ?? [];
+
+        if ($request->boolean('step_completed')) {
             if (!in_array($request->step_index, $completedSteps)) {
                 $completedSteps[] = $request->step_index;
-                $grounding->completed_steps_json = $completedSteps;
-                $grounding->completed_steps = count($completedSteps);
-            }
-            
-            // Check if all steps are completed
-            if (count($completedSteps) >= 5) {
-                $grounding->is_completed = true;
-                $grounding->completed_at = now();
-                $this->awardXP($userId, 0.5);
             }
         }
-        
+
+        // ensure unique + sorted
+        $completedSteps = array_values(array_unique($completedSteps));
+        sort($completedSteps);
+
+        $grounding->completed_steps_json = $completedSteps;
+
+        // --------------------------
+        // 🎯 FINAL STEP COUNT
+        // --------------------------
+        $finalSteps = $completedSteps;
+
+        $grounding->completed_steps = count($finalSteps);
+        $grounding->total_steps = 5;
+
+        // --------------------------
+        // 🚀 COMPLETION LOGIC (ONLY ONCE)
+        // --------------------------
+        if (count($finalSteps) >= 5 && !$grounding->is_completed) {
+            $grounding->is_completed = true;
+            $grounding->completed_at = now();
+
+            // ✅ ADD POINTS ONCE
+            app(\App\Http\Controllers\StatsController::class)->updateStats();
+        }
+
+        // frontend fallback
+        if ($request->boolean('is_completed')) {
+            $grounding->is_completed = true;
+            $grounding->completed_at = now();
+        }
+
+        // --------------------------
+        // 💾 SAVE
+        // --------------------------
         $grounding->save();
-        
+
         return response()->json([
             'success' => true,
-            'completed_steps' => $grounding->completed_steps_json ?? [],
-            'is_completed' => $grounding->is_completed
+            'completed' => $grounding->is_completed,
+            'completed_steps' => $completedSteps
         ]);
     }
     
@@ -248,7 +286,7 @@ class GroundingController extends Controller
      */
     public function resetProgress()
     {
-        $userId = Auth::id() ?? 1;
+        $userId = Auth::id();
         $today = now()->format('Y-m-d');
         
         $deleted = Grounding::where('user_id', $userId)
@@ -266,7 +304,7 @@ class GroundingController extends Controller
      */
     public function getHistory(Request $request)
     {
-        $userId = Auth::id() ?? 1;
+        $userId = Auth::id();
         $limit = $request->get('limit', 30);
         
         $history = Grounding::where('user_id', $userId)
@@ -284,6 +322,26 @@ class GroundingController extends Controller
         
         return response()->json($history);
     }
+
+    /**
+     * Get if grounding is completed on current day
+     */
+    public function checkToday(Request $request)
+    {
+        $userId = auth()->id();
+
+        $today = now()->toDateString();
+
+        $completed = Grounding::where('user_id', $userId)
+            ->whereDate('completed_at', $today)
+            ->where('is_completed', true)
+            ->exists();
+
+        return response()->json([
+            'completed' => $completed
+        ]);
+    }
+
     
     // ────────────────── PRIVATE HELPER METHODS ──────────────────
     
@@ -386,4 +444,6 @@ class GroundingController extends Controller
         
         return round(($completions / 30) * 100, 1);
     }
+
+
 }

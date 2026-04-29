@@ -35,7 +35,13 @@ function saveEntry() {
     const formData = new FormData();
     formData.append("content", text);
     if (file) formData.append("image", file);
-    fetch("/journal", { method: "POST", headers: { "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content }, body: formData })
+
+    fetch("/journal", { 
+    method: "POST",
+    credentials: "include",
+    headers: { "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content }, 
+    body: formData })
+
     .then(res => { if (!res.ok) throw new Error("Failed"); return res.json(); })
     .then(data => {
         document.getElementById("journalInput").value = "";

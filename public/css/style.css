@@ -1743,6 +1743,11 @@ body.chat-page .chat-stage {
   flex-wrap:wrap;
 }
 
+.filter-pill {
+  background: #4c7a60 !important;
+  color: white;
+}
+
 .pill{
   border: none;
   cursor: pointer;
@@ -4433,4 +4438,23 @@ header{
 
 .history-menu .danger {
   color: #c0392b;
+}
+
+/* ================================================================
+   MOOD HISTORY (GROWTH PAGE)
+   ================================================================ */
+.day-note {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eee;
+  margin-right: 6px;
+  font-size: 12px;
 }

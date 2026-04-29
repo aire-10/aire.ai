@@ -167,7 +167,9 @@
         // ✅ USE YOUR REAL SYSTEM
         await AireData.logMood(mood);
 
+        // 🔥 ADD THIS LINE (VERY IMPORTANT)
         window.dispatchEvent(new Event("aire:mood-logged"));
+
         // 🔥 FORCE REFRESH UI STATE
         await refreshPetCard();
 

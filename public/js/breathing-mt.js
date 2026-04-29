@@ -100,6 +100,7 @@ async function saveBreathingSession() {
 
     const response = await fetch('/breathing', {
       method: 'POST',
+      credentials: "include",
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content

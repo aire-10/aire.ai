@@ -14,12 +14,12 @@
 let moodChartInstance = null;
 
 const STAGE_CONFIG = {
-  egg:         { img: "images/egg.png",         label: "Egg 🥚",        color: "#8a7060", xpMax: 10  },
-  caterpillar: { img: "images/caterpillar.png", label: "Caterpillar 🐛", color: "#7aab72", xpMax: 30  },
-  pupa:        { img: "images/pupa.png",        label: "Pupa 🦋",        color: "#4c7a60", xpMax: 50  },
-  butterfly:   { img: "images/adult_glow.png",  label: "Butterfly 🦋",   color: "#3a8c3a", xpMax: 100 },
-  surviving:   { img: "images/surviving.jpeg",  label: "Surviving 🌱",    color: "#b0a060", xpMax: 3   },
-  struggling:  { img: "images/struggling.jpeg", label: "Struggling 💔",   color: "#a07070", xpMax: 2   },
+  egg:         { img: "egg.png",         label: "Egg 🥚",        color: "#8a7060", xpMax: 10  },
+  caterpillar: { img: "caterpillar.png", label: "Caterpillar 🐛", color: "#7aab72", xpMax: 30  },
+  pupa:        { img: "pupa.png",        label: "Pupa 🦋",        color: "#4c7a60", xpMax: 50  },
+  butterfly:   { img: "adult_glow.png",  label: "Butterfly 🦋",   color: "#3a8c3a", xpMax: 100 },
+  surviving:   { img: "surviving.jpeg",  label: "Surviving 🌱",    color: "#b0a060", xpMax: 3   },
+  struggling:  { img: "struggling.jpeg", label: "Struggling 💔",   color: "#a07070", xpMax: 2   },
 };
 
 const NEXT_STAGE_LABEL = {
@@ -57,115 +57,6 @@ function getTotalMoodPoints(log) {
   return points;
 }
 
-/* ── Core: build per-day snapshots with streak-based stage transitions ── */
-function buildSnapshots(log) {
-  if (!log.length) return [];
-
-  /* Latest check-in per day */
-  const byDay = {};
-  const countByDay = {};
-
-  log.forEach(e => {
-    const day = e.date || e.created_at?.split("T")[0];
-
-    if (!day) return;
-
-    // count entries
-    countByDay[day] = (countByDay[day] || 0) + 1;
-
-    // store latest entry per day
-    if (!byDay[day] || new Date(e.created_at) > new Date(byDay[day].created_at)) {
-      byDay[day] = e;
-    }
-  });
-
-  const days = Object.keys(byDay).sort();
-
-  let cumulativePoints = 0;
-  let streak = 0;
-  let stageKey = "egg";
-  let hasReachedButterfly = false;
-  let consecutiveNeg = 0;
-  let recoveryStreak = 0;
-
-  const snapshots = days.map(day => {
-    const mood = byDay[day].mood;
-    const isPos = AireData.POSITIVE.includes(mood);
-
-    // ✅ FIX: update streak properly
-    if (isPos) {
-      streak += 1;
-    } else {
-      streak = 0;
-    }
-
-    // existing points logic...
-    cumulativePoints += 1;
-    if (isPos) cumulativePoints += 1;
-
-    if (localStorage.getItem(`grounding-achieved-${day}`)) cumulativePoints += 0.5;
-    if (localStorage.getItem(`moodlifting-achieved-${day}`)) cumulativePoints += 0.5;
-    if (localStorage.getItem(`mindreset-achieved-${day}`)) cumulativePoints += 0.5;
-    if (localStorage.getItem(`minitask-achieved-${day}`)) cumulativePoints += 0.5;
-    if (localStorage.getItem(`bodybooster-achieved-${day}`)) cumulativePoints += 0.5;
-
-
-    /* ── Stage transitions ── */
-    if (hasReachedButterfly) {
-      /* Already reached butterfly — handle decline / recovery */
-      if (!isPos) {
-        /* Declining based on negative moods */
-        if (consecutiveNeg >= 2) {
-          stageKey = "struggling";
-        } else {
-          stageKey = "surviving";
-        }
-      } else {
-        /* Recovering — only advance if currently in a decline state */
-        if (stageKey === "struggling" && recoveryStreak >= 2) {
-          stageKey = "surviving";
-        } else if (stageKey === "surviving" && recoveryStreak >= 3) {
-          stageKey = "butterfly";
-          recoveryStreak = 0;
-        }
-        /* If already butterfly, stay butterfly */
-      }
-    } else {
-      /* Normal growth path based on cumulative points */
-      if (cumulativePoints < 10) {
-        stageKey = "egg";
-      } else if (cumulativePoints < 30) {
-        stageKey = "caterpillar";
-      } else if (cumulativePoints < 50) {
-        stageKey = "pupa";
-      } else {
-        stageKey = "butterfly";
-      }
-
-      if (stageKey === "butterfly") {
-        hasReachedButterfly = true;
-        recoveryStreak = 0;
-        consecutiveNeg = 0;
-      }
-    }
-
-    return {
-      dayKey: day,
-      mood,
-      note: byDay[day].notes || "",
-      stageKey,
-      streak,
-      cumulativePoints,
-      recoveryStreak,
-      hasReachedButterfly,
-      consecutiveNeg,
-      checkIns: countByDay[day] || 1,
-    };
-  });
-
-  return snapshots.reverse(); /* most-recent first */
-}
-
 /* ── Get current stage info ── */
 function getCurrentStage(snapshots) {
   if (!snapshots.length) {
@@ -175,24 +66,24 @@ function getCurrentStage(snapshots) {
 }
 
 /* ── Hero section ─────────────────────────────────────── */
-async function renderHero(snapshots) {
-  const current = getCurrentStage(snapshots);
-  const streak = AireData.getStreak();
-  const daysTracked = await AireData.getDaysTracked();
-  const todayCount = await AireData.getTodayCheckInCount();
-  const latestMoodData = await AireData.getLatestMood();
-  const latestMood = typeof latestMoodData === "object"
-    ? latestMoodData?.mood
-    : latestMoodData;
+async function renderHero() {
+  const streak = await AireData.getStreak();
+  const points = await AireData.getTotalPoints();
+  const stageKey = await AireData.getStageKey();
+  const stats = await AireData.getStats();
+
+  const daysTracked = stats.daysTracked;
+  const todayCount = stats.todayCheckIns;
+  const latestMood = stats.latestMood;
   const moodMeta = AireData.MOOD_META();
 
-  const cfg = STAGE_CONFIG[current.stageKey] || STAGE_CONFIG.egg;
+  const cfg = STAGE_CONFIG[stageKey] || STAGE_CONFIG.egg;
 
   /* Butterfly image + label */
   const imgEl = document.getElementById("petImg");
   const labelEl = document.getElementById("petStageLabel");
   if (imgEl) {
-    imgEl.src = cfg.img;
+    imgEl.src = `/images/${cfg.img}`;
     imgEl.alt = cfg.label;
   }
   if (labelEl) {
@@ -205,40 +96,18 @@ async function renderHero(snapshots) {
   const xpText = document.getElementById("petXpText");
   const xpHint = document.getElementById("petXpHint");
 
-  let xpVal, xpMax, hintText;
-  const isDecline = current.hasReachedButterfly && current.stageKey !== "butterfly";
-
-  if (current.stageKey === "butterfly") {
-    xpVal = cfg.xpMax;
-    xpMax = cfg.xpMax;
-    hintText = "Your butterfly is fully grown! Keep your streak alive 🦋";
-  } else if (isDecline) {
-    /* Recovery XP — consecutive positives since last negative */
-    xpVal = current.recoveryStreak;
-    xpMax = cfg.xpMax;
-    const next = NEXT_STAGE_LABEL[current.stageKey];
-    const rem = xpMax - xpVal;
-    hintText = `${rem} more positive mood${rem !== 1 ? "s" : ""} to reach ${next}`;
-  } else {
-    /* Normal growth progress */
-    xpVal = Math.min(current.cumulativePoints, cfg.xpMax);
-    xpMax = cfg.xpMax;
-    const next = NEXT_STAGE_LABEL[current.stageKey];
-    if (next) {
-      const rem = Math.max(xpMax - current.cumulativePoints, 0);
-      hintText = `${rem} more positive mood${rem !== 1 ? "s" : ""} to reach ${next}`;
-    } else {
-      hintText = "You've reached the final stage! 🦋";
-    }
-  }
+  const xpVal = points;
+  const xpMax = cfg.xpMax;
 
   const pct = Math.round((xpVal / xpMax) * 100);
+
   if (xpFill) {
     xpFill.style.width = pct + "%";
     xpFill.style.background = cfg.color;
   }
+
   if (xpText) xpText.textContent = `${xpVal} / ${xpMax} pts`;
-  if (xpHint) xpHint.textContent = hintText;
+  if (xpHint) xpHint.textContent = "Keep going 💚";
 
   /* KPI row */
   const moodLabel = latestMood
@@ -249,7 +118,7 @@ async function renderHero(snapshots) {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
   };
-  
+
   set("pkStreak", streak);
   set("pkDays", daysTracked);
   set("pkToday", todayCount);
@@ -263,24 +132,23 @@ async function renderActions() {
 
   const todayISO = new Date().toISOString().split("T")[0];
 
-  // ✅ FIX: await mood log
   const log = await AireData.getMoodLog();
 
-  const todayLogs = log.filter(e =>
-    (e.date || e.created_at?.split("T")[0]) === todayISO
-  );
+  const todayLogs = log.filter(e => {
+    const d = e.date || e.created_at?.split("T")[0];
+    return d === todayISO;
+  });
 
-  const hasToday = todayLogs.length > 0;
+  const hasToday = todayLogs.length >= 1;
   const hasPositive = todayLogs.some(e =>
-    AireData.POSITIVE.includes(e.mood)
+    AireData.POSITIVE.includes(e.mood?.toLowerCase())
   );
 
-  // ✅ CORRECT localStorage keys (WITH DATE)
-  const bodyBoosterDone = localStorage.getItem(`bodybooster-achieved-${todayISO}`);
-  const miniTaskDone   = localStorage.getItem(`minitask-achieved-${todayISO}`);
-  const mindResetDone  = localStorage.getItem(`mindreset-achieved-${todayISO}`);
-  const moodLiftingDone= localStorage.getItem(`moodlifting-achieved-${todayISO}`);
-  const groundingDone  = localStorage.getItem(`grounding-achieved-${todayISO}`);
+  // ✅ FETCH BACKEND COMPLETION STATUS
+  const stats = await fetch('/growth/data', {
+    credentials: "include"
+  }).then(r => r.json());
+  const completed = stats.completedActions;
 
   const mark = (id, done) => {
     const el = document.getElementById(id);
@@ -292,40 +160,25 @@ async function renderActions() {
     el.style.color = done ? "#fff" : "transparent";
   };
 
+  // ✅ MOOD
   mark("checkMood", hasToday);
   mark("checkPositive", hasPositive);
-  mark("checkBodyBooster", !!bodyBoosterDone);
-  mark("checkMiniTask", !!miniTaskDone);
-  mark("checkMindReset", !!mindResetDone);
-  mark("checkMoodLifting", !!moodLiftingDone);
-  mark("checkGrounding", !!groundingDone);
+
+  // ✅ SELF-CARE (ALL BACKEND)
+  mark("checkGrounding", completed.grounding);
+  mark("checkBodyBooster", completed.bodybooster);
+  mark("checkMiniTask", completed.minitask);
+  mark("checkMindReset", completed.mindreset);
+  mark("checkMoodLifting", completed.moodlifting);
 }
 
-  // async function getMoodLiftingDone() {
-  //   try {
-  //     const res = await fetch("/moodlifting/check-today");
-
-  //     if (!res.ok) return false; // prevent crash
-
-  //     const data = await res.json();
-  //     return data.completed;
-
-  //   } catch (e) {
-  //     console.warn("Moodlifting API failed:", e);
-  //     return false;
-  //   }
-  // }
 
 /* ── Streak badges ────────────────────────────────────── */
 async function renderStreakBadges() {
-  const log = await AireData.getMoodLog();
-  const snapshots = buildSnapshots(log);
-
   const el = document.getElementById("streakBadges");
   if (!el) return;
 
-  const current = getCurrentStage(snapshots);
-  const streak = current.streak;
+  const streak = await AireData.getStreak();
 
   el.innerHTML = STREAK_MILESTONES.map(m => {
     const earned = streak >= m.days;
@@ -339,6 +192,16 @@ async function renderStreakBadges() {
       </div>`;
   }).join("");
 }
+
+/* ── Get growth data ────────────────────────────────────── */
+async function fetchGrowthData() {
+  const res = await fetch('/growth/data', {
+    credentials: "include"
+  });
+  const data = await res.json();
+  return data;
+}
+
 /* =========================
    📊 MOOD CHART
 ========================= */
@@ -426,91 +289,132 @@ async function renderMoodChart() {
 }
 
 /* ── Timeline ─────────────────────────────────────────── */
-async function renderTimeline(snapshots, log) {
+async function renderTimeline(log) {
   const el = document.getElementById("growthTimeline");
   if (!el) return;
-  
+
   if (!log.length) {
-    el.innerHTML = `<p style="text-align:center;color:rgba(0,0,0,0.4);padding:30px 0;">No check-ins yet — <a href="home.html" style="color:#3a6b35;font-weight:700;">log your first mood</a>!</p>`;
+    el.innerHTML = `<p style="text-align:center;color:rgba(0,0,0,0.4);padding:30px 0;">
+      No check-ins yet
+    </p>`;
     return;
   }
-  
-  el.innerHTML = snapshots.map(s => {
-    const cfg = STAGE_CONFIG[s.stageKey] || STAGE_CONFIG.egg;
-    const moodMeta = AireData.MOOD_META()[s.mood] || {};
-    const isDecline = s.hasReachedButterfly && s.stageKey !== "butterfly";
-    
-    let streakInfo = `🔥 ${s.streak} day streak`;
-    if (isDecline && s.stageKey === "struggling") {
-      streakInfo = `💔 Struggling - ${s.recoveryStreak}/2 positives to recover`;
-    } else if (isDecline && s.stageKey === "surviving") {
-      streakInfo = `🌱 Surviving - ${s.recoveryStreak}/3 positives to become butterfly`;
+
+  const moodMeta = AireData.MOOD_META();
+
+  // ✅ GROUP BY DAY
+  const grouped = {};
+
+  log.forEach(entry => {
+    const date = entry.date || entry.created_at?.split("T")[0];
+
+    if (!grouped[date]) grouped[date] = [];
+    grouped[date].push(entry);
+  });
+
+  // ✅ SORT LATEST FIRST
+  const days = Object.keys(grouped).sort().reverse();
+
+  // ✅ FETCH GLOBAL STATS ONCE
+  const stats = await AireData.getStats();
+  const stageKey = stats.stage;
+  const stage = STAGE_CONFIG[stageKey] || STAGE_CONFIG.egg;
+
+  el.innerHTML = days.map(date => {
+
+    const entries = grouped[date];
+
+    // ✅ TAKE LATEST ENTRY OF THAT DAY
+    const latest = entries[entries.length - 1];
+
+    const mood = latest.mood?.toLowerCase();
+    const meta = moodMeta[mood] || {};
+
+    // ✅ COUNT CHECK-INS
+    const checkIns = entries.length;
+
+    // ✅ CALCULATE DAILY POINTS (same logic as backend)
+    let points = 1; // logged mood
+    if (entries.some(e => AireData.POSITIVE.includes(e.mood))) {
+      points += 1;
     }
-    
+
+    // ✅ GET NOTE
+    const note = latest.note || "";
+
     return `
       <article class="day-card">
         <div class="day-left">
-          <div class="day-date">${formatDayLabel(s.dayKey)}</div>
+
+          <div class="day-date">${date}</div>
+
           <div class="day-meta">
-            <span class="badge stage" style="background:${cfg.color}20; color:${cfg.color}">
-              <img src="${cfg.img}" alt="${cfg.label}" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;border-radius:3px;"> ${cfg.label}
+            <span class="badge stage">
+              🥚 ${stage.label}
             </span>
-            <span class="badge mood">${moodMeta.emoji || "🙂"} ${moodMeta.label || s.mood}</span>
-            <span class="badge count">${s.checkIns} check-in${s.checkIns === 1 ? "" : "s"}</span>
+
+            <span class="badge mood">
+              ${meta.emoji || "🙂"} ${meta.label || mood}
+            </span>
+
+            <span class="badge checkins">
+              ${checkIns} check-in${checkIns > 1 ? "s" : ""}
+            </span>
+
+            <span class="badge points">
+              ⭐ ${points} pts
+            </span>
           </div>
-          ${s.note ? `<div class="day-note" style="margin-top:8px;font-size:0.85rem;color:rgba(0,0,0,0.6);">"${s.note.substring(0, 100)}${s.note.length > 100 ? '...' : ''}"</div>` : ""}
+
+          ${note ? `<p class="day-note">"${note}"</p>` : ""}
+
         </div>
-        <div class="day-right">
-          <div class="day-streak">${streakInfo}</div>
-          <div class="day-points" style="font-size:0.75rem;color:rgba(0,0,0,0.4);margin-top:4px;">${s.cumulativePoints} total points</div>
-        </div>
-      </article>`;
+      </article>
+    `;
+
   }).join("");
 }
 
 /* ── Init ─────────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", async () => {
   const log = await AireData.getMoodLog();
-  const snapshots = buildSnapshots(log);
 
-  await renderHero(snapshots);
+  await renderHero();
   await renderActions();
   await renderStreakBadges();
-
   await renderMoodChart();
-  await renderTimeline(snapshots, log);
+  await renderTimeline(log);
 });
 
 document.addEventListener("visibilitychange", async () => {
   if (!document.hidden) {
     const log = await AireData.getMoodLog();
-    const snapshots = buildSnapshots(log);
-    await renderHero(snapshots);
+    await renderHero();
     await renderActions();
     await renderStreakBadges();
     await renderMoodChart();
-    await renderTimeline(snapshots, log);
+    await renderTimeline(log);
   }
 });
 
 window.addEventListener("aire:mood-logged", async () => {
-  const log = await AireData.getMoodLog();
-  const snapshots = buildSnapshots(log);
+  const log = await fetch('/api/mood-log', {
+    credentials: "include"
+  }).then(res => res.json());
 
-  await renderHero(snapshots);
+  await renderHero();
   await renderActions();
   await renderStreakBadges();
   await renderMoodChart();
-  await renderTimeline(snapshots, log);
+  await renderTimeline(log);
 });
 
 window.addEventListener("focus", async () => {
   const log = await AireData.getMoodLog();
-  const snapshots = buildSnapshots(log);
 
-  await renderHero(snapshots);
+  await renderHero();
   await renderActions();
   await renderStreakBadges();
   await renderMoodChart();
-  await renderTimeline(snapshots, log);
+  await renderTimeline(log);
 });

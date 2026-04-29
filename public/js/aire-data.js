@@ -5,6 +5,7 @@
 
 const AireData = (() => {
 
+
   /* Mood string sets */
   const POSITIVE = ["joyful", "happy", "content"];
   const NEGATIVE = ["anxious", "sad", "tired", "neutral"];
@@ -52,6 +53,7 @@ const AireData = (() => {
     try {
       const response = await fetch(`/api/${endpoint}`, {
         method: "GET",
+        credentials: "include",
         headers: {
           "Accept": "application/json",
           "X-Requested-With": "XMLHttpRequest"
@@ -77,94 +79,47 @@ const AireData = (() => {
 
   /* ── Get Mood Log from API ── */
   async function getMoodLog() {
-    if (!cache.moodLog) {
-      cache.moodLog = await fetchFromAPI('mood-log', []);
-      cache.lastFetch = Date.now();
-    }
-    return cache.moodLog;
+    const raw = await fetchFromAPI('mood-log', []);
+
+    return raw.map(e => ({
+      ...e,
+      mood: e.mood
+    }));
   }
 
-  /* ── Get Streak from localstorage ── */
-  function getStreak() {
-    return parseInt(localStorage.getItem("streak-count") || "0");
+  /* ── Get Streak from backend ── */
+  async function getStreak() {
+    const stats = await getStats();
+    return stats.streak;
   }
 
-  /* ── Get Days Tracked from API ── */
-  async function getDaysTracked() {
-    if (!cache.daysTracked || !isCacheFresh()) {
-      cache.daysTracked = await fetchFromAPI('days-tracked', 0);
-    }
-    return cache.daysTracked;
-  }
+  /* ── Get Growth Data from backend ── */
+  async function getGrowthData() {
+    try {
+      const response = await fetch('/growth/data', {
+        credentials: "include"
+      });
 
-  /* ── Get Today's Check-in Count from API ── */
-  async function getTodayCheckInCount() {
-    if (!cache.todayCheckIns || !isCacheFresh()) {
-      cache.todayCheckIns = await fetchFromAPI('today-checkins', 0);
-    }
-    return cache.todayCheckIns;
-  }
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
 
-  /* ── Get Latest Mood from API ── */
-  async function getLatestMood() {
-    if (!cache.latestMood || !isCacheFresh()) {
-      cache.latestMood = await fetchFromAPI('latest-mood', null);
-    }
-    return cache.latestMood;
-  }
+      return await response.json();
 
-  /* ── Calculate Stage based on points and mood history ── */
-  async function calcStageKey() {
-    const log = await getMoodLog();
-    const points = await getTotalPoints();
-    
-    if (!log.length) return "egg";
-    
-    // Check if user has reached butterfly before (points >= 50)
-    const hasReachedButterfly = points >= 50;
-    
-    if (hasReachedButterfly) {
-      // Check recent negative moods for decline
-      const recentLogs = log.slice(-5);
-      const negativeCount = recentLogs.filter(entry => 
-        NEGATIVE.includes(entry.mood)
-      ).length;
-      
-      if (negativeCount >= 2) return "struggling";
-      if (negativeCount >= 1) return "surviving";
-      return "butterfly";
+    } catch (error) {
+      console.error("Growth data fetch error:", error);
+      return {
+        daysTracked: 0,
+        todayCheckIns: 0,
+        latestMood: null
+      };
     }
-    
-    // Normal growth based on points
-    if (points < 10) return "egg";
-    if (points < 30) return "caterpillar";
-    if (points < 50) return "pupa";
-    return "butterfly";
   }
 
   /* ── Calculate Total Points (moods + completed activities) ── */
   async function getTotalPoints() {
-    const log = await getMoodLog();
-    let points = 0;
-    
-    // Each mood entry = 1 point
-    points += log.length;
-    
-    // Positive mood bonus = +1 point
-    const positiveMoods = log.filter(entry => POSITIVE.includes(entry.mood));
-    points += positiveMoods.length;
-    
-  // Task completions (backend)
-  // ✅ SELF-CARE POINTS (ONLY TODAY)
-  const today = new Date().toISOString().split("T")[0];
-
-  if (localStorage.getItem(`grounding-achieved-${today}`)) points += 0.5;
-  if (localStorage.getItem(`moodlifting-achieved-${today}`)) points += 0.5;
-  if (localStorage.getItem(`mindreset-achieved-${today}`)) points += 0.5;
-  if (localStorage.getItem(`minitask-achieved-${today}`)) points += 0.5;
-  if (localStorage.getItem(`bodybooster-achieved-${today}`)) points += 0.5;
-    
-    return points;
+    const stats = await getStats();
+    return stats.points;
   }
 
   /* ── Helper Functions ── */
@@ -175,8 +130,9 @@ const AireData = (() => {
   /* ── Log a mood to the API ── */
   async function logMood(mood, note) {
     try {
-      const response = await fetch('/api/log-mood', {
+      const response = await fetch('/mood', {
         method: 'POST',
+        credentials: "include",
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -184,7 +140,7 @@ const AireData = (() => {
         },
         body: JSON.stringify({
           mood: mood,
-          note: note
+          notes: note
         })
       });
 
@@ -197,11 +153,14 @@ const AireData = (() => {
       const data = await response.json();
 
       // ✅ CLEAR CACHE AFTER SAVE
-      cache.moodLog = null;
-      cache.lastFetch = 0;
-
-      // ✅ UPDATE STREAK (FIRST MOOD ONLY)
-      updateStreak(mood);
+      cache = {
+        moodLog: null,
+        streak: null,
+        daysTracked: null,
+        todayCheckIns: null,
+        latestMood: null,
+        lastFetch: 0
+      };
 
       return data;
 
@@ -213,13 +172,14 @@ const AireData = (() => {
 
   /* ── Get Stage Info ── */
   async function getStageInfo() {
-    const stageKey = await getStageFromSnapshots();
+    const stageKey = await getStageKey();
     return STAGES[stageKey] || STAGES.egg;
   }
 
   /* ── Get Stage Key ── */
   async function getStageKey() {
-    return await getStageFromSnapshots();
+    const stats = await getStats();
+    return stats.stage;
   }
 
   /* ── Get Latest Entry ── */
@@ -322,80 +282,6 @@ const AireData = (() => {
   /* ── Initialize: Fetch mood meta on load ── */
   fetchMoodMeta();
 
-/* =========================================================
-   STREAK SYSTEM (FIRST MOOD ONLY)
-========================================================= */
-  function updateStreak(mood) {
-    const today = new Date().toISOString().split("T")[0];
-
-    const lastDate = localStorage.getItem("streak-last-date");
-    const streak = parseInt(localStorage.getItem("streak-count") || "0");
-
-    // ✅ prevent multiple updates in same day
-    if (lastDate === today) return;
-
-    const isPositive = POSITIVE.includes(mood);
-
-    let newStreak = 0;
-
-    if (isPositive) {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yStr = yesterday.toISOString().split("T")[0];
-
-      if (lastDate === yStr) {
-        newStreak = streak + 1;
-      } else {
-        newStreak = 1;
-      }
-    } else {
-      newStreak = 0;
-    }
-
-    localStorage.setItem("streak-count", newStreak);
-    localStorage.setItem("streak-last-date", today);
-  }
-
-  async function getStageFromSnapshots() {
-    const log = await getMoodLog();
-
-    if (!log.length) return "egg";
-
-    // replicate growth.js logic
-    const byDay = {};
-    log.forEach(e => {
-      if (!byDay[e.date] || e.ts > byDay[e.date].ts) {
-        byDay[e.date] = e;
-      }
-    });
-
-    const days = Object.keys(byDay).sort();
-
-    let cumulativePoints = 0;
-    let stageKey = "egg";
-
-    for (const day of days) {
-      const mood = byDay[day].mood;
-      const isPos = POSITIVE.includes(mood);
-
-      cumulativePoints += 1;
-      if (isPos) cumulativePoints += 1;
-
-      if (localStorage.getItem(`grounding-achieved-${day}`)) cumulativePoints += 0.5;
-      if (localStorage.getItem(`moodlifting-achieved-${day}`)) cumulativePoints += 0.5;
-      if (localStorage.getItem(`mindreset-achieved-${day}`)) cumulativePoints += 0.5;
-      if (localStorage.getItem(`minitask-achieved-${day}`)) cumulativePoints += 0.5;
-      if (localStorage.getItem(`bodybooster-achieved-${day}`)) cumulativePoints += 0.5;
-
-      if (cumulativePoints < 10) stageKey = "egg";
-      else if (cumulativePoints < 30) stageKey = "caterpillar";
-      else if (cumulativePoints < 50) stageKey = "pupa";
-      else stageKey = "butterfly";
-    }
-
-    return stageKey;
-  }
-
   // toast
   window.showGlobalToast = function ({ title, message, tip }) {
     const toast = document.getElementById("moodToast");
@@ -410,6 +296,39 @@ const AireData = (() => {
     setTimeout(() => {
       toast.classList.remove("show");
     }, 3500);
+  }
+
+  // backend stats fetch (points, streak, stage)
+  async function getStats() {
+    return await fetchFromAPI('stats', {
+      points: 0,
+      streak: 0,
+      stage: 'egg'
+    });
+  }
+
+  function mapMoodLevelToName(level) {
+    if (level >= 9) return "joyful";
+    if (level >= 7) return "happy";
+    if (level >= 5) return "neutral";
+    if (level >= 3) return "anxious";
+    return "sad";
+  }
+
+  /* ── FIX: Missing backend-backed helpers ── */
+  async function getDaysTracked() {
+    const data = await getGrowthData();
+    return data.daysTracked || 0;
+  }
+
+  async function getTodayCheckInCount() {
+    const data = await getGrowthData();
+    return data.todayCheckIns || 0;
+  }
+
+  async function getLatestMood() {
+    const data = await getGrowthData();
+    return data.latestMood || null;
   }
 
   /* Expose everything - Note: Many functions now return Promises! */
@@ -435,12 +354,12 @@ const AireData = (() => {
     getBondLevel: () => getBondLevel(),
     addXP: (amount) => addXP(amount),
     getXP: () => getXP(),
-    getStageFromSnapshots,
     POSITIVE,
     NEGATIVE,
     MOOD_META: () => MOOD_META,
     STAGES,
     today: () => todayStr(),
+    getStats,
   };
 
 })();
