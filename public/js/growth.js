@@ -276,11 +276,28 @@ async function renderMoodChart() {
         y: {
           min: 0,
           max: 5,
+          offset: true, // ✅ THIS IS IMPORTANT (moves ticks between bars)
+
           ticks: {
+            stepSize: 1,
+
+            padding: 10, // ✅ pushes emoji slightly UP
+
             callback: function(value) {
-              const map = ["😔","😰","😐","😊","😄"];
+              const map = {
+                1: "😔",
+                2: "😰",
+                3: "😐",
+                4: "😊",
+                5: "😄"
+              };
+
               return map[value] || "";
             }
+          },
+
+          grid: {
+            drawBorder: false
           }
         }
       }
