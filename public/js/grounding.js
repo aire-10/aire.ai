@@ -203,12 +203,18 @@ function openFocusMode(index) {
 
   setTimeout(() => overlay.classList.add("show"), 10);
 
-  document.getElementById("focusDoneBtn").onclick = () => {
-    doneStep(new Event("click"), index);
-    closeFocusMode();
-  };
+  const doneBtn = document.getElementById("focusDoneBtn");
+  if (doneBtn) {
+    doneBtn.onclick = () => {
+      doneStep(new Event("click"), index);
+      closeFocusMode();
+    };
+  }
 
-  document.getElementById("focusNextBtn").onclick = goToNextStep;
+  const nextBtn = document.getElementById("focusNextBtn");
+  if (nextBtn) {
+    nextBtn.onclick = goToNextStep;
+  }
 }
 
 function closeFocusMode() {
@@ -252,7 +258,6 @@ function doneStep(e, index) {
   // ✅ ADD STEP FIRST
   completedSteps.add(index);
 
-  // 🔥 FORCE ALL STEPS INTO ARRAY BEFORE SAVE
   const allSteps = Array.from(completedSteps);
 
   markStepDoneUI(index);
@@ -261,12 +266,19 @@ function doneStep(e, index) {
 
   const isCompleted = completedSteps.size === TOTAL_STEPS;
 
-  // ✅ SEND FULL ARRAY (FIX)
+  // ✅ SAVE TO BACKEND
   saveToDatabase(allSteps, isCompleted);
 
-  if (isCompleted) showCompletion();
+  // 🔥 ADD THIS (MATCH BOOSTER BEHAVIOR)
+  showEncouragement();
+  showSparkles();
 
-    window.dispatchEvent(new Event("aire:mood-logged"));
+  // ✅ ONLY SHOW TOAST WHEN FULL COMPLETE
+  if (isCompleted) {
+    showCompletion();
+  }
+
+  window.dispatchEvent(new Event("aire:mood-logged"));
 }
 
 function markStepDoneUI(index) {
@@ -338,5 +350,42 @@ async function showCompletion() {
 
   } catch (err) {
     console.error("❌ completion check error:", err);
+  }
+}
+
+/* =========================
+   ✨ EFFECTS (COPY FROM BOOSTER)
+========================= */
+
+function showEncouragement() {
+
+  const messages = [
+    "Good… stay present 💚",
+    "You're doing great 🌿",
+    "Keep grounding yourself 🌱",
+    "You’re safe in this moment 🤍",
+    "Breathe… you're okay 🌸"
+  ];
+
+  const msg = messages[Math.floor(Math.random() * messages.length)];
+
+  const popup = document.createElement("div");
+  popup.className = "xp-popup";
+  popup.innerHTML = `<div class="xp-popup-inner">${msg}</div>`;
+
+  document.body.appendChild(popup);
+
+  setTimeout(() => popup.classList.add("show"), 10);
+  setTimeout(() => popup.remove(), 2000);
+}
+
+function showSparkles() {
+  for (let i = 0; i < 10; i++) {
+    const s = document.createElement("div");
+    s.className = "sparkle";
+    s.style.left = Math.random() * window.innerWidth + "px";
+    s.style.top = Math.random() * window.innerHeight + "px";
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
   }
 }
